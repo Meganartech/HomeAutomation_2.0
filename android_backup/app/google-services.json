@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "54845054705",
+    "firebase_url": "https://home-automation-39426-default-rtdb.firebaseio.com",
+    "project_id": "home-automation-39426",
+    "storage_bucket": "home-automation-39426.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:54845054705:android:19b061b67ff8d85ff8d350",
+        "android_client_info": {
+          "package_name": "com.meganar.smart"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCGOKfcFS9He-NnfOd0DrrS_sJ9L8G_Nnk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
