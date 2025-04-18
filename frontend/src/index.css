@@ -1,152 +1,32 @@
-body {
-    overflow: auto !important;
-    padding-right: 0px !important;
+* {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
 
-.mt-8 {
-    margin-top: 64px;
+.form-control {
+    border: 0px solid #ced4da !important;
+    border-radius: 0px !important;
+    border-bottom: 1px solid #ced4da !important;
 }
 
-.mt-12 {
-    margin-top: 96px;
-}
-
-.mt-20 {
-    margin-top: 160px;
-}
-
-.text-123458 {
-    color: #123458 !important;
-}
-
-.text-D4C9BE {
-    color: #D4C9BE !important;
-}
-
-.bg-123458 {
-    background-color: #123458 !important;
-    color: #D4C9BE !important;
-}
-
-.bg-D4C9BE {
-    background-color: #D4C9BE !important;
-}
-
-.bg-D4C9BE {
-    background-color: #D4C9BE !important;
-}
-
-.btn-123458 {
-    background-color: #123458 !important;
-    color: #D4C9BE !important;
-}
-
-.form-control:focus,
-.form-select:focus {
-    border: 1px solid #123458 !important;
-    box-shadow: 0 0 0 1px rgb(18, 52, 88) !important;
-}
-
-.form-check-input:checked {
-    background-color: #123458 !important;
-    border-color: #123458 !important;
-}
-
-.form-check-input:focus {
-    border-color: #123458 !important;
-    box-shadow: 0 0 0 .25rem rgba(18, 52, 88, .25) !important;
-}
-
-.active-123458 {
-    background-color: #123458 !important;
-    color: #D4C9BE !important;
-}
-
-.active-D4C9BE {
-    background-color: #D4C9BE !important;
-    color: #123458 !important;
-}
-
-.nav-link {
-    padding-left: 8px !important;
-    border-radius: 5px !important;
-}
-
-.nav-link-hover:hover {
-    background-color: #D4C9BE !important;
-    color: #123458 !important;
-}
-
-.navbar-icon {
-    display: inline-block;
-    width: 1.5em;
-    height: 1.5em;
-    vertical-align: middle;
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: 100%;
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255, 255, 255, 0.55%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
-}
-
-.navbar-toggler:focus {
+.form-control:focus {
     box-shadow: none !important;
 }
 
-.sidebar-hover:hover {
-    background-color: #123458 !important;
-    color: #D4C9BE !important;
+.text-6c757d {
+    color: #6c757d;
 }
 
-@media(min-width: 768px) {
-    .height {
-        height: 100vh !important;
-    }
+.form-floating>label {
+    padding: 1.5rem .5rem !important;
 }
 
-/* SweetAlert2 custom styles */
-.my-swal-popup {
-    background-color: #123458;
-    border-radius: 15px;
+.form-floating>.form-control {
+    padding-top: 3rem !important;
+    padding-bottom: 1rem !important;
+    padding-left: .5rem !important;
 }
 
-/* Title and content text color */
-.my-swal-popup .swal2-title {
-    color: #D4C9BE;
-}
-
-.my-swal-popup .swal2-html-container {
-    color: #D4C9BE;
-}
-
-/* Success Icon Circle Border */
-.my-swal-popup .swal2-success-ring {
-    border: 4px solid #D4C9BE !important;
-}
-
-/* Success Icon Tick Mark Color */
-.my-swal-popup .swal2-success-line-tip,
-.my-swal-popup .swal2-success-line-long {
-    background-color: #D4C9BE !important;
-}
-
-/* Error Icon Circle Border */
-.my-swal-popup .swal2-error {
-    border-color: #D4C9BE !important;
-}
-
-/* Error Icon Cross Lines */
-.my-swal-popup .swal2-x-mark-line-left,
-.my-swal-popup .swal2-x-mark-line-right {
-    background-color: #D4C9BE !important;
-}
-
-/* Error Icon Ring */
-.my-swal-popup .swal2-error-ring {
-    border: 4px solid #D4C9BE !important;
-}
-
-/* Confirm button */
-.my-swal-popup .swal2-confirm {
-    background-color: #D4C9BE !important;
-    color: #123458 !important;
+.form-floating>.form-control:focus {
+    padding-top: 3rem !important;
+    padding-bottom: 1rem !important;
 }
