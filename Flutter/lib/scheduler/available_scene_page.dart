@@ -115,6 +115,7 @@ Future<void> _listenToScenes() async {
   if (userId == null) return;
 
   try {
+    // 1. Get the scene data
     final sceneRef = FirebaseDatabase.instance.ref("users/$userId/scenes/$sceneName");
     final sceneSnapshot = await sceneRef.get();
     
@@ -123,6 +124,7 @@ Future<void> _listenToScenes() async {
     final sceneData = sceneSnapshot.value as Map<dynamic, dynamic>;
     final devicePortPairs = <String>{};
 
+    // 2. Collect device-port pairs from the nested structure
     sceneData.forEach((deviceId, deviceData) {
       if (deviceData is Map && deviceData['ports'] is Map) {
         final ports = deviceData['ports'] as Map<dynamic, dynamic>;
@@ -133,20 +135,31 @@ Future<void> _listenToScenes() async {
       }
     });
 
+    // 3. COMPREHENSIVE SCHEDULER CANCELLATION
     try {
+      // Workmanager doesn't provide direct access to pending work requests
+      // So we'll cancel by known tag patterns
+      
+      // Cancel all device-port specific tasks
       for (final pair in devicePortPairs) {
+        // Cancel ON tasks
         await Workmanager().cancelByTag('${pair}_ON');
+        // Cancel OFF tasks
         await Workmanager().cancelByTag('${pair}_OFF');
         debugPrint("Cancelled tasks for $pair");
       }
       
+      // Cancel scene-level tasks
       await Workmanager().cancelByTag('scene_$sceneName');
       debugPrint("Cancelled scene-level tasks");
 
+      // As a last resort, cancel ALL work if needed
+      // await Workmanager().cancelAll();
     } catch (e) {
       debugPrint("Error cancelling scheduled tasks: $e");
     }
 
+    // 4. Remove from Firebase AutomaticOnOff
     final autoOnOffRef = FirebaseDatabase.instance.ref("users/$userId/AutomaticOnOff");
     final autoOnOffSnapshot = await autoOnOffRef.get();
     
@@ -173,6 +186,7 @@ Future<void> _listenToScenes() async {
       }
     }
 
+    // 5. Remove from SharedPreferences
     final prefs = await SharedPreferences.getInstance();
     final String? sharedPrefsData = prefs.getString('EspDevice');
     
@@ -183,6 +197,7 @@ Future<void> _listenToScenes() async {
       if (data.containsKey(userId) && data[userId] is Map) {
         final userData = data[userId] as Map<String, dynamic>;
         
+        // Remove from AutomaticOnOff
         if (userData['AutomaticOnOff'] is Map) {
           final autoOnOff = Map<String, dynamic>.from(userData['AutomaticOnOff'] as Map);
           autoOnOff.removeWhere((deviceId, deviceData) {
@@ -207,13 +222,16 @@ Future<void> _listenToScenes() async {
       }
     }
 
+    // 6. Remove from savedScenes list
     final savedScenes = prefs.getStringList("savedScenes") ?? [];
     if (savedScenes.remove(sceneName)) {
       await prefs.setStringList("savedScenes", savedScenes);
     }
 
+    // 7. Finally delete the scene itself
     await sceneRef.remove();
 
+    // 8. Update UI
     if (mounted) {
       setState(() => scenes.remove(sceneName));
       Navigator.pushReplacement(

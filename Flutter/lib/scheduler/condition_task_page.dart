@@ -14,6 +14,7 @@ import 'package:home_auto_sample/service/database_service.dart';
 import 'package:home_auto_sample/settings/settings_1_page.dart';
 import 'package:home_auto_sample/tabBar/custom_appbar.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ConditionTaskPage extends StatefulWidget {
@@ -307,6 +308,7 @@ void _showSceneNameDialog(BuildContext context) {
 Future<void> _createScene(BuildContext context, String sceneName) async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
   DatabaseReference dbRef = FirebaseDatabase.instance.ref().child("users").child(userId);
+  final scheduler = Provider.of<BackgroundSchedulerService>(context, listen: false);
 
   String? storedJson = prefs.getString("EspDevice");
   Map<String, dynamic> storedData = storedJson != null ? jsonDecode(storedJson) : {};
@@ -369,13 +371,12 @@ Future<void> _createScene(BuildContext context, String sceneName) async {
   }
 
   await prefs.setString("EspDevice", jsonEncode(storedData));
-    try {
-    final scheduler = BackgroundSchedulerService();
-  await scheduler.startSceneScheduler(userId, sceneName);
-    debugPrint("Scene scheduler started for $sceneName");
-  } catch (e) {
-    debugPrint("Error starting scene scheduler: $e");
-  }
+  try{
+    await scheduler.startSceneScheduler(userId, sceneName);
+      debugPrint("Scene scheduler started for $sceneName");
+  }catch (e) {
+      debugPrint("Error starting scene scheduler: $e");
+    }
 
   if (!mounted) return;
 

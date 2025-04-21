@@ -23,15 +23,19 @@ void main() async {
           measurementId: "G-37NJX1HHMG"));
 
 
-  // Initialize Workmanager
-    await BackgroundSchedulerService().initialize();
+   // Initialize Background Scheduler
+  final scheduler = BackgroundSchedulerService();
+  await scheduler.initialize();
+    
 
   runApp(
-      ChangeNotifierProvider(
-      create: (_) => ThemeNotifier(),
-    
+      MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ThemeNotifier()),
+        Provider<BackgroundSchedulerService>.value(value: scheduler),
+      ],
       child: const MyApp(),
-  ),
+    ),
   );
 }
 
