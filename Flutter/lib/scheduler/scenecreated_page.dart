@@ -63,7 +63,7 @@ class _SceneCreatedPageState extends State<SceneCreatedPage> {
               Image.asset('assets/images/home_7.png'),
               const SizedBox(height: 20),
               const Text(
-                'Device added successfully',
+                'Scene Created successfully',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 50),
