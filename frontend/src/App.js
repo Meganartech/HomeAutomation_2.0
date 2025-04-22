@@ -1,10 +1,26 @@
-import './App.css'
-import Register from './pages/Register';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import './App.css';
+import Login from './auth/Login';
+import Register from './auth/Register';
+import ForgotPassword from './auth/ForgotPassword';
+import OtpVerify from './auth/OtpVerify';
+import ResetPassword from './auth/ResetPassword';
 
-export default function App() {
+function App() {
   return (
     <>
-      <Register />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Login />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path='/forgot/password' element={<ForgotPassword />} />
+          <Route path='/otp/verify' element={<OtpVerify />} />
+          <Route path='/reset/password' element={<ResetPassword />} />
+        </Routes>
+      </BrowserRouter >
     </>
   );
-};
+}
+
+export default App;
