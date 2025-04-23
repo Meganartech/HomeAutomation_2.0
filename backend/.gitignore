@@ -31,7 +31,3 @@ build/
 
 ### VS Code ###
 .vscode/
-
-# .gitignore
-backend/ServiceAccountKey.json
-*.key.json

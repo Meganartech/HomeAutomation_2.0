@@ -1,17 +1,39 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import { FaEye, FaEyeSlash } from "react-icons/fa"; 
+import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 export default function Login() {
     const [formData, setFormData] = useState({ email: "", password: "" });
     const [showPassword, setShowPassword] = useState(false);
+    const navigate = useNavigate();
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
+
+        try {
+            const response = await axios.post('http://localhost:8081/user/login', formData);
+            if (response.status === 200) {
+                alert(response.data.message);
+                navigate('/login');
+            }
+        } catch (error) {
+            if (error.response?.data?.error) {
+                alert(`${error.response.data.error}`);
+                console.log(error.response.data.error);
+            } else {
+                alert('Login failed due to server error.');
+            }
+        }
+
+        setFormData({
+            email: '',
+            password: ''
+        });
     };
 
     const togglePasswordVisibility = () => {

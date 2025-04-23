@@ -1,35 +1,54 @@
 import React, { useState, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 
 export default function OtpVerify() {
-    const [otp, setOtp] = useState(["", "", "", ""]);
+    const [otpData, setOtp] = useState(["", "", "", "", "", ""]);
     const navigate = useNavigate();
     const inputs = useRef([]);
+    const location = useLocation();
+    const { email } = location.state || {};
 
     const handleChange = (index, value) => {
         if (!/^\d?$/.test(value)) return;
-        const newOtp = [...otp];
+        const newOtp = [...otpData];
         newOtp[index] = value;
         setOtp(newOtp);
 
-        if (value && index < 3) {
+        if (value && index < 5) {
             inputs.current[index + 1].focus();
         }
     };
 
     const handleKeyDown = (index, e) => {
-        if (e.key === "Backspace" && !otp[index] && index > 0) {
+        if (e.key === "Backspace" && !otpData[index] && index > 0) {
             inputs.current[index - 1].focus();
         }
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        const enteredOtp = otp.join("");
-        navigate('/reset/password');
-        console.log("OTP entered:", enteredOtp);
-        // navigate("/next-step");
+        const otp = otpData.join("");
+        try {
+            const response = await axios.post("http://localhost:8081/user/otp/verify", {
+                email, otp
+            });
+
+
+            if (response.status === 200) {
+                alert("OTP verified successfully. You can now reset your password.");
+                navigate('/reset/password', { state: { email } });
+            }
+        } catch (err) {
+            if (err.response?.data?.error) {
+                alert(`${err.response.data.error}`);
+                console.log(err.response.data.error);
+            } else {
+                alert('OTP verification failed due to server error.');
+            }
+        }
     };
+
 
     return (
         <>
@@ -40,7 +59,7 @@ export default function OtpVerify() {
 
                     <form onSubmit={handleSubmit}>
                         <div className="d-flex justify-content-between form-floating mb-3">
-                            {otp.map((digit, i) => (
+                            {otpData.map((digit, i) => (
                                 <input
                                     key={i}
                                     ref={el => inputs.current[i] = el}

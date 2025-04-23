@@ -2,6 +2,7 @@ package project.home.automation.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import project.home.automation.dto.OtpDTO;
 import project.home.automation.dto.UserDTO;
 import project.home.automation.service.UserService;
 
@@ -20,6 +21,29 @@ public class UserController {
     @PostMapping("/register")
     public ResponseEntity<?> postRegister(@RequestBody UserDTO registerRequest) {
         return userService.postRegister(registerRequest);
+    }
+
+    // Post login
+    @PostMapping("/login")
+    public ResponseEntity<?> postLogin(@RequestBody UserDTO loginRequest) {
+        return userService.postLogin(loginRequest);
+    }
+
+    // Post email
+    @PostMapping("/forgot/password")
+    public ResponseEntity<?> postEmail(@RequestBody OtpDTO emailRequest) {
+        return userService.postEmail(emailRequest);
+    }
+
+    // Post OTP
+    @PostMapping("/otp/verify")
+    public ResponseEntity<?> postOtp(@RequestBody OtpDTO otpRequest) {
+        return userService.postOtp(otpRequest);
+    }
+
+    @PutMapping("/reset/password")
+    public ResponseEntity<?> putPassword(@RequestBody OtpDTO updateRequest) {
+        return userService.putPassword(updateRequest);
     }
 
 }
