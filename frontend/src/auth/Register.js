@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 export default function Register() {
     const [formData, setFormData] = useState({
@@ -10,6 +11,7 @@ export default function Register() {
         password: '',
         confirmPassword: ''
     });
+    const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
 
     const handleChange = (e) => {
@@ -18,30 +20,27 @@ export default function Register() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-    
+
         if (formData.password !== formData.confirmPassword) {
             alert("Passwords do not match!");
             return;
         }
-    
-        const { name, email, mobileNumber, password } = formData;
-        const requestData = { name, email, mobileNumber, password };
-    
+
         try {
-            const response = await axios.post('http://localhost:8081/user/register', requestData);
+            const response = await axios.post('http://localhost:8081/user/register', formData);
             if (response.status === 200) {
                 alert('Registration successful!');
                 navigate('/login');
             }
         } catch (error) {
             if (error.response?.data?.error) {
-                alert(`Registration failed: ${error.response.data.error}`);
+                alert(`${error.response.data.error}`);
                 console.log(error.response.data.error);
             } else {
                 alert('Registration failed due to server error.');
             }
         }
-    
+
         setFormData({
             name: '',
             email: '',
@@ -50,7 +49,10 @@ export default function Register() {
             confirmPassword: ''
         });
     };
-    
+
+    const togglePasswordVisibility = () => {
+        setShowPassword(!showPassword);
+    };
 
     return (
         <>
@@ -74,9 +76,16 @@ export default function Register() {
                             <input type="password" name="password" className="form-control mb-1" placeholder='' value={formData.password} onChange={handleChange} required />
                             <label className='text-6c757d'>Password</label>
                         </div>
-                        <div className="form-floating mb-3">
-                            <input type="password" name="confirmPassword" className="form-control mb-1" placeholder='' value={formData.confirmPassword} onChange={handleChange} required />
-                            <label className='text-6c757d'>Confirm Password</label>
+                        <div className="mb-3 position-relative">
+                            <div className="form-floating">
+                                <input type={showPassword ? "text" : "password"} name="confirmPassword" className="form-control" placeholder="" value={formData.confirmPassword} onChange={handleChange} required />
+                                <label className="text-6c757d">Confirm Password</label>
+                            </div>
+                            <span
+                                onClick={togglePasswordVisibility}
+                                style={{ position: "absolute", right: "15px", top: "60%", transform: "translateY(-50%)", cursor: "pointer", color: "#6c757d" }}>
+                                {showPassword ? <FaEyeSlash /> : <FaEye />}
+                            </span>
                         </div>
                         <div className='d-flex justify-content-center mt-4 mb-3'>
                             <button type="submit" className="btn btn-dark w-75">Register</button>

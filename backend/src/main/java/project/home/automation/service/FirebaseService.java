@@ -17,10 +17,10 @@ public class FirebaseService {
         try {
             // Prevent re-initializing FirebaseApp if already initialized
             if (FirebaseApp.getApps().isEmpty()) {
-                try (FileInputStream serviceAccount = new FileInputStream("")) {
+                try (FileInputStream serviceAccount = new FileInputStream("./ServiceAccountKey.json")) {
                     FirebaseOptions options = new FirebaseOptions.Builder()
                             .setCredentials(GoogleCredentials.fromStream(serviceAccount))
-                            .setDatabaseUrl("")
+                            .setDatabaseUrl("https://fir-94b70-default-rtdb.firebaseio.com")
                             .build();
 
                     FirebaseApp.initializeApp(options);

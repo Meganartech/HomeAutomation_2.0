@@ -1,4 +1,4 @@
-package project.home.automation.entity;
+package project.home.automation.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -9,10 +9,8 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class User {
-    private String userId;
-    private String name;
+public class OtpDTO {
     private String email;
-    private String mobileNumber;
-    private String password;
+    private String otp;
+    private String newPassword;
 }
