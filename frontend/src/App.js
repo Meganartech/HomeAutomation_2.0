@@ -5,6 +5,7 @@ import Register from './auth/Register';
 import ForgotPassword from './auth/ForgotPassword';
 import OtpVerify from './auth/OtpVerify';
 import ResetPassword from './auth/ResetPassword';
+import Settings from './pages/Settings';
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
           <Route path='/forgot/password' element={<ForgotPassword />} />
           <Route path='/otp/verify' element={<OtpVerify />} />
           <Route path='/reset/password' element={<ResetPassword />} />
+          <Route path='/settings' element={<Settings />} />
         </Routes>
       </BrowserRouter >
     </>
