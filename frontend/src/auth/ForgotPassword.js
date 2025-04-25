@@ -26,7 +26,6 @@ export default function ForgotPassword() {
                 alert('OTP send failed due to server error.');
             }
         };
-
         setFormData({ email: "" });
     }
 
@@ -37,6 +36,7 @@ export default function ForgotPassword() {
                     <h3 className="mb-3">Forgot Password</h3>
                     <p className="text-muted mb-5">Please enter your registered email to reset your password.</p>
 
+                    {/* form */}
                     <form onSubmit={handleSubmit}>
                         <div className="form-floating mb-3">
                             <input type="email" name="email" className="form-control mb-1" placeholder="" value={formData.email} onChange={handleChange} required />
@@ -47,7 +47,6 @@ export default function ForgotPassword() {
                             <button type="submit" className="btn btn-dark w-100">Get OTP</button>
                         </div>
                     </form>
-
                 </div>
             </div>
         </>
