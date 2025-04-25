@@ -56,7 +56,7 @@ export default function Register() {
 
     return (
         <>
-            <div className="container mt-4">
+            <div className="container-fluid d-flex justify-content-center align-items-center bg-eceaea" style={{ minHeight: "100vh" }}>
                 <div className="card shadow border-0 p-4 mx-auto" style={{ maxWidth: '500px' }}>
                     <h3 className="mb-3">Register</h3>
                     <form onSubmit={handleSubmit}>

@@ -47,7 +47,7 @@ export default function ResetPassword() {
 
     return (
         <>
-            <div className="container d-flex justify-content-center align-items-center" style={{ minHeight: "100vh" }}>
+            <div className="container-fluid d-flex justify-content-center align-items-center bg-eceaea" style={{ minHeight: "100vh" }}>
                 <div className="card shadow border-0 p-4 mx-auto" style={{ maxWidth: "450px", width: "100%", minHeight: "450px" }}>
                     <h3 className="mb-3">Reset Password</h3>
                     <p className="text-muted mb-3">Please enter your password and confirm the password.</p>
