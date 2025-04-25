@@ -8,7 +8,6 @@ import project.home.automation.service.UserService;
 
 @RestController
 @RequestMapping("/user")
-@CrossOrigin("http://localhost:3000")
 public class UserController {
 
     private final UserService userService;
@@ -46,4 +45,19 @@ public class UserController {
         return userService.putPassword(updateRequest);
     }
 
+    @GetMapping("/profile")
+    public ResponseEntity<?> getProfile(@RequestHeader("Authorization") String token) {
+        return userService.getProfile(token);
+    }
+
+    @PutMapping("/profile/update")
+    public ResponseEntity<?> putUpdateProfile(@RequestHeader("Authorization") String token, @RequestBody UserDTO updateRequest) {
+        return userService.putUpdateProfile(token, updateRequest);
+    }
+
+    @PostMapping("/password/verify")
+    public ResponseEntity<?> postPasswordAndGetOtp(@RequestHeader("Authorization") String token, @RequestBody OtpDTO otpRequest){
+        return userService.postPasswordAndGetOtp(token, otpRequest);
+    }
+    
 }

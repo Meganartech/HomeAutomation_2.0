@@ -1,33 +1,87 @@
 package project.home.automation.service;
 
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseAuthException;
-import com.google.firebase.auth.UserRecord;
 import com.google.firebase.database.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import project.home.automation.dto.OtpDTO;
 import project.home.automation.dto.UserDTO;
 import project.home.automation.entity.User;
+import project.home.automation.security.JwtUtil;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
 @Service
 public class UserService {
 
     private static final String COLLECTION_NAME = "user";
+    private final JwtUtil jwtUtil;
+    private final PasswordEncoder passwordEncoder;
     private final OtpService otpService;
 
-    public UserService(OtpService otpService) {
+    public UserService(JwtUtil jwtUtil, OtpService otpService, PasswordEncoder passwordEncoder) {
+        this.jwtUtil = jwtUtil;
         this.otpService = otpService;
+        this.passwordEncoder = passwordEncoder;
     }
 
-    // Custom user id
-    public String generateUserId(DataSnapshot snapshot) {
-        int maxId = 0;
+    private ResponseEntity<?> ok(String message) {
+        return ResponseEntity.ok(Collections.singletonMap("message", message));
+    }
 
+    private ResponseEntity<?> error(String message) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.singletonMap("error", message));
+    }
+
+    private ResponseEntity<?> conflict() {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Collections.singletonMap("error", "Email already exists"));
+    }
+
+    private ResponseEntity<?> notFound(String message) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Collections.singletonMap("error", message));
+    }
+
+    private ResponseEntity<?> unauthorized(String message) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Collections.singletonMap("error", message));
+    }
+
+    private DataSnapshot getSnapshotSync(DatabaseReference ref) throws InterruptedException {
+        CountDownLatch latch = new CountDownLatch(1);
+        final DataSnapshot[] snapshotHolder = new DataSnapshot[1];
+        final boolean[] errorOccurred = {false};
+
+        ref.addListenerForSingleValueEvent(new ValueEventListener() {
+            public void onDataChange(DataSnapshot snapshot) {
+                snapshotHolder[0] = snapshot;
+                latch.countDown();
+            }
+
+            public void onCancelled(DatabaseError error) {
+                errorOccurred[0] = true;
+                latch.countDown();
+            }
+        });
+
+        latch.await();
+        return errorOccurred[0] ? null : snapshotHolder[0];
+    }
+
+    private User findUserByEmail(DataSnapshot snapshot, String email) {
+        for (DataSnapshot userSnapshot : snapshot.getChildren()) {
+            User user = userSnapshot.getValue(User.class);
+            if (user != null && user.getEmail().equalsIgnoreCase(email)) {
+                return user;
+            }
+        }
+        return null;
+    }
+
+    private String generateUserId(DataSnapshot snapshot) {
+        int maxId = 0;
         for (DataSnapshot userSnapshot : snapshot.getChildren()) {
             User user = userSnapshot.getValue(User.class);
             if (user != null && user.getUserId() != null && user.getUserId().startsWith("user")) {
@@ -38,229 +92,210 @@ public class UserService {
                 }
             }
         }
-
         return String.format("user%03d", maxId + 1);
     }
 
-    // Post register
     public ResponseEntity<?> postRegister(UserDTO registerRequest) {
         try {
             DatabaseReference ref = FirebaseDatabase.getInstance().getReference(COLLECTION_NAME);
-            CountDownLatch latch = new CountDownLatch(1);
-            final String[] resultMessage = new String[1];
-            final boolean[] emailExists = {false};
-            final String[] newUserId = new String[1];
+            DataSnapshot snapshot = getSnapshotSync(ref);
+            if (snapshot == null) return error("Firebase error during registration");
 
-            ref.addListenerForSingleValueEvent(new ValueEventListener() {
-                public void onDataChange(DataSnapshot snapshot) {
-                    // Check if email already exists
-                    for (DataSnapshot userSnapshot : snapshot.getChildren()) {
-                        User existingUser = userSnapshot.getValue(User.class);
-                        if (existingUser != null && registerRequest.getEmail().equalsIgnoreCase(existingUser.getEmail())) {
-                            emailExists[0] = true;
-                            break;
-                        }
-                    }
-
-                    if (emailExists[0]) {
-                        resultMessage[0] = "Email already exists";
-                        latch.countDown();
-                        return;
-                    }
-
-                    newUserId[0] = generateUserId(snapshot);
-
-                    User user = new User();
-                    user.setUserId(newUserId[0]);
-                    user.setName(registerRequest.getName());
-                    user.setMobileNumber(registerRequest.getMobileNumber());
-                    user.setEmail(registerRequest.getEmail());
-                    user.setPassword(registerRequest.getPassword());
-
-                    ref.child(newUserId[0]).setValueAsync(user);
-                    resultMessage[0] = "Registered successfully";
-                    latch.countDown();
-                }
-
-                public void onCancelled(DatabaseError error) {
-                    resultMessage[0] = "Error: " + error.getMessage();
-                    latch.countDown();
-                }
-            });
-
-            latch.await();
-
-            if (emailExists[0]) {
-                return ResponseEntity.status(HttpStatus.CONFLICT).body(Collections.singletonMap("error", resultMessage[0]));
-            } else {
-                return ResponseEntity.ok(Collections.singletonMap("message", resultMessage[0]));
+            if (findUserByEmail(snapshot, registerRequest.getEmail()) != null) {
+                return conflict();
             }
 
+            String newUserId = generateUserId(snapshot);
+            User newUser = new User();
+            newUser.setUserId(newUserId);
+            newUser.setName(registerRequest.getName());
+            newUser.setMobileNumber(registerRequest.getMobileNumber());
+            newUser.setEmail(registerRequest.getEmail());
+            newUser.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
+
+            ref.child(newUserId).setValueAsync(newUser);
+            return ok("Registered successfully");
+
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.singletonMap("error", "Registration failed: " + e.getMessage()));
+            return error("Registration failed: " + e.getMessage());
         }
     }
 
-    // Post login
     public ResponseEntity<?> postLogin(UserDTO loginRequest) {
         try {
             DatabaseReference ref = FirebaseDatabase.getInstance().getReference(COLLECTION_NAME);
-            CountDownLatch latch = new CountDownLatch(1);
-            final String[] resultMessage = new String[1];
-            final boolean[] loginSuccess = {false};
-            final User[] loggedInUser = new User[1];
+            DataSnapshot snapshot = getSnapshotSync(ref);
+            if (snapshot == null) return error("Firebase error during login");
 
-            ref.addListenerForSingleValueEvent(new ValueEventListener() {
-                public void onDataChange(DataSnapshot snapshot) {
-                    for (DataSnapshot userSnapshot : snapshot.getChildren()) {
-                        User existingUser = userSnapshot.getValue(User.class);
-                        if (existingUser != null &&
-                                loginRequest.getEmail().equalsIgnoreCase(existingUser.getEmail()) &&
-                                loginRequest.getPassword().equals(existingUser.getPassword())) {
+            for (DataSnapshot userSnapshot : snapshot.getChildren()) {
+                User user = userSnapshot.getValue(User.class);
+                if (user != null && user.getEmail().equalsIgnoreCase(loginRequest.getEmail()) &&
+                        passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
 
-                            loginSuccess[0] = true;
-                            loggedInUser[0] = existingUser;
-                            break;
-                        }
-                    }
-
-                    if (loginSuccess[0]) {
-                        resultMessage[0] = "Login successful";
-                    } else {
-                        resultMessage[0] = "Invalid email or password";
-                    }
-                    latch.countDown();
+                    String token = jwtUtil.generateToken(user.getEmail());
+                    Map<String, String> response = new HashMap<>();
+                    response.put("token", token);
+                    response.put("role", user.getRole());
+                    return ResponseEntity.ok(response);
                 }
-
-                public void onCancelled(DatabaseError error) {
-                    resultMessage[0] = "Error: " + error.getMessage();
-                    latch.countDown();
-                }
-            });
-
-            latch.await();
-
-            if (loginSuccess[0]) {
-                return ResponseEntity.ok(Collections.singletonMap("message", resultMessage[0]));
-            } else {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Collections.singletonMap("error", resultMessage[0]));
             }
 
+            return unauthorized("Invalid email or password");
+
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.singletonMap("error", "Login failed: " + e.getMessage()));
+            return error("Login failed: " + e.getMessage());
         }
     }
 
-    // Post email
     public ResponseEntity<?> postEmail(OtpDTO emailRequest) {
         try {
             DatabaseReference ref = FirebaseDatabase.getInstance().getReference(COLLECTION_NAME);
-            CountDownLatch latch = new CountDownLatch(1);
-            final String[] resultMessage = new String[1];
-            final boolean[] emailExists = {false};
+            DataSnapshot snapshot = getSnapshotSync(ref);
+            if (snapshot == null) return error("Firebase error while sending OTP");
 
-            ref.addListenerForSingleValueEvent(new ValueEventListener() {
-                public void onDataChange(DataSnapshot snapshot) {
-                    for (DataSnapshot userSnapshot : snapshot.getChildren()) {
-                        User existingUser = userSnapshot.getValue(User.class);
-                        if (existingUser != null && emailRequest.getEmail().equalsIgnoreCase(existingUser.getEmail())) {
-                            emailExists[0] = true;
+            User user = findUserByEmail(snapshot, emailRequest.getEmail());
+            if (user == null) return notFound("Email not found");
 
-                            // Send OTP
-                            otpService.sendOtp(emailRequest.getEmail());
-                            resultMessage[0] = "OTP sent to email";
-                            break;
-                        }
-                    }
-
-                    if (!emailExists[0]) {
-                        resultMessage[0] = "Email not found";
-                    }
-                    latch.countDown();
-                }
-
-                public void onCancelled(DatabaseError error) {
-                    resultMessage[0] = "Error: " + error.getMessage();
-                    latch.countDown();
-                }
-            });
-
-            latch.await();
-
-            if (emailExists[0]) {
-                return ResponseEntity.ok(Collections.singletonMap("message", resultMessage[0]));
-            } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Collections.singletonMap("error", resultMessage[0]));
-            }
+            otpService.sendOtp(emailRequest.getEmail());
+            return ok("OTP sent to email");
 
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.singletonMap("error", "OTP request failed: " + e.getMessage()));
+            return error("OTP request failed: " + e.getMessage());
         }
     }
 
-    // Post OTP
     public ResponseEntity<?> postOtp(OtpDTO otpRequest) {
         try {
             boolean isValid = otpService.isOtpValid(otpRequest.getEmail(), otpRequest.getOtp());
-            System.out.println("Received OTP request: email=" + otpRequest.getEmail() + ", otp=" + otpRequest.getOtp());
-
             if (!isValid) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Collections.singletonMap("error", "Invalid or expired OTP"));
+                return ResponseEntity.badRequest().body(Collections.singletonMap("error", "Invalid or expired OTP"));
             }
-            return ResponseEntity.ok(Collections.singletonMap("message", "OTP verified successfully"));
+            return ok("OTP verified successfully");
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.singletonMap("error", "Error verifying OTP: " + e.getMessage()));
+            return error("Error verifying OTP: " + e.getMessage());
         }
     }
 
-    // Put password
     public ResponseEntity<?> putPassword(OtpDTO request) {
         try {
             DatabaseReference ref = FirebaseDatabase.getInstance().getReference(COLLECTION_NAME);
-            CountDownLatch latch = new CountDownLatch(1);
-            final String[] resultMessage = new String[1];
-            final boolean[] userFound = {false};
-            System.out.println(request.getEmail());
+            DataSnapshot snapshot = getSnapshotSync(ref);
+            if (snapshot == null) return error("Firebase error while updating password");
 
-            ref.addListenerForSingleValueEvent(new ValueEventListener() {
-                public void onDataChange(DataSnapshot snapshot) {
-                    for (DataSnapshot userSnapshot : snapshot.getChildren()) {
-                        User existingUser = userSnapshot.getValue(User.class);
-                        if (existingUser != null && request.getEmail().equalsIgnoreCase(existingUser.getEmail())) {
-                            userFound[0] = true;
-                            // Update password
-                            userSnapshot.getRef().child("password").setValueAsync(request.getNewPassword());
-                            resultMessage[0] = "Password updated successfully in Realtime DB";
-                            break;
-                        }
-                    }
-
-                    if (!userFound[0]) {
-                        resultMessage[0] = "User not found with the provided email.";
-                    }
-
-                    latch.countDown();
+            for (DataSnapshot userSnapshot : snapshot.getChildren()) {
+                User user = userSnapshot.getValue(User.class);
+                if (user != null && user.getEmail().equalsIgnoreCase(request.getEmail())) {
+                    userSnapshot.getRef().child("password").setValueAsync(passwordEncoder.encode(request.getNewPassword()));
+                    return ok("Password updated successfully in Realtime DB");
                 }
-
-                public void onCancelled(DatabaseError error) {
-                    resultMessage[0] = "Error: " + error.getMessage();
-                    latch.countDown();
-                }
-            });
-
-            latch.await();
-
-            if (userFound[0]) {
-                return ResponseEntity.ok(Collections.singletonMap("message", resultMessage[0]));
-            } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Collections.singletonMap("error", resultMessage[0]));
             }
 
+            return notFound("User not found with the provided email.");
+
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Collections.singletonMap("error", "Failed to update password: " + e.getMessage()));
+            return error("Failed to update password: " + e.getMessage());
         }
     }
 
+    public ResponseEntity<?> getProfile(String token) {
+        try {
+            if (token == null || !token.startsWith("Bearer ")) {
+                return unauthorized("Missing token or bearer");
+            }
+
+            String jwtToken = token.substring(7);
+            if (!jwtUtil.isTokenValid(jwtToken)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Collections.singletonMap("error", "Invalid or expired token"));
+            }
+
+            String email = jwtUtil.extractEmail(jwtToken);
+            DatabaseReference ref = FirebaseDatabase.getInstance().getReference(COLLECTION_NAME);
+            DataSnapshot snapshot = getSnapshotSync(ref);
+            if (snapshot == null) return error("Firebase error while fetching profile");
+
+            User user = findUserByEmail(snapshot, email);
+            if (user == null) return notFound("User not found");
+
+            return ResponseEntity.ok(user);
+
+        } catch (Exception e) {
+            return error("Failed to fetch profile: " + e.getMessage());
+        }
+    }
+
+    public ResponseEntity<?> postPasswordAndGetOtp(String token, OtpDTO otpRequest) {
+        try {
+            if (token == null || !token.startsWith("Bearer ")) {
+                return unauthorized("Missing token or bearer");
+            }
+
+            String jwtToken = token.substring(7);
+            if (!jwtUtil.isTokenValid(jwtToken)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Collections.singletonMap("error", "Invalid or expired token"));
+            }
+
+            String email = jwtUtil.extractEmail(jwtToken);
+            DatabaseReference ref = FirebaseDatabase.getInstance().getReference(COLLECTION_NAME);
+            DataSnapshot snapshot = getSnapshotSync(ref);
+            if (snapshot == null) return error("Firebase error while verifying password");
+
+            for (DataSnapshot userSnapshot : snapshot.getChildren()) {
+                User user = userSnapshot.getValue(User.class);
+                if (user != null && user.getEmail().equalsIgnoreCase(email)) {
+
+                    if (otpRequest.getPassword() == null || !passwordEncoder.matches(otpRequest.getPassword(), user.getPassword())) {
+                        return unauthorized("Incorrect password");
+                    }
+
+                    otpService.sendOtp(user.getEmail());
+                    return ok("OTP sent to your registered email");
+                }
+            }
+
+            return notFound("User not found");
+        } catch (Exception e) {
+            return error("Failed to verify password and send OTP: " + e.getMessage());
+        }
+    }
+
+    public ResponseEntity<?> putUpdateProfile(String token, UserDTO updateRequest) {
+        try {
+            if (token == null || !token.startsWith("Bearer ")) {
+                return unauthorized("Missing token or bearer");
+            }
+
+            String jwtToken = token.substring(7);
+            if (!jwtUtil.isTokenValid(jwtToken)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Collections.singletonMap("error", "Invalid or expired token"));
+            }
+
+            String email = jwtUtil.extractEmail(jwtToken);
+            DatabaseReference ref = FirebaseDatabase.getInstance().getReference(COLLECTION_NAME);
+            DataSnapshot snapshot = getSnapshotSync(ref);
+            if (snapshot == null) return error("Firebase error while updating profile");
+
+            for (DataSnapshot userSnapshot : snapshot.getChildren()) {
+                User user = userSnapshot.getValue(User.class);
+                if (user != null && user.getEmail().equalsIgnoreCase(email)) {
+
+                    if (updateRequest.getName() != null) {
+                        userSnapshot.getRef().child("name").setValueAsync(updateRequest.getName());
+                    }
+                    if (updateRequest.getMobileNumber() != null) {
+                        userSnapshot.getRef().child("mobileNumber").setValueAsync(updateRequest.getMobileNumber());
+                    }
+                    if (updateRequest.getEmail() != null) {
+                        userSnapshot.getRef().child("email").setValueAsync(updateRequest.getEmail());
+                    }
+                    return ok("Profile updated successfully");
+                }
+            }
+
+            return notFound("User not found");
+
+        } catch (Exception e) {
+            return error("Failed to update profile: " + e.getMessage());
+        }
+    }
 
 }

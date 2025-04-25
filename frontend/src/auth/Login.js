@@ -8,6 +8,11 @@ export default function Login() {
     const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
 
+    const formField = [
+        { name: "email", type: "email", placeholder: "", label: "Email" },
+        { name: "password", type: showPassword ? "text" : "password", placeholder: "", label: "Password" }
+    ];
+
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
@@ -29,7 +34,6 @@ export default function Login() {
                 alert('Login failed due to server error.');
             }
         }
-
         setFormData({
             email: '',
             password: ''
@@ -48,22 +52,21 @@ export default function Login() {
                     <p className="text-muted mb-3">Please fill your detail to access your account.</p>
 
                     <form onSubmit={handleSubmit}>
-                        <div className="form-floating mb-3">
-                            <input type="email" name="email" className="form-control mb-1" placeholder="" value={formData.email} onChange={handleChange} required />
-                            <label className="text-6c757d">Email</label>
-                        </div>
-
-                        <div className="mb-3 position-relative">
-                            <div className="form-floating">
-                                <input type={showPassword ? "text" : "password"} name="password" className="form-control" placeholder="" value={formData.password} onChange={handleChange} required />
-                                <label className="text-6c757d">Password</label>
+                        {formField.map((ref, index) => (
+                            <div key={index} className="mb-3 position-relative">
+                                <div className="form-floating">
+                                    <input type={ref.type} name={ref.name} className="form-control" placeholder={ref.placeholder} value={formData[ref.name]} onChange={handleChange} required />
+                                    <label className="text-6c757d">{ref.label}</label>
+                                    {ref.name === "password" && (
+                                        <span
+                                            onClick={togglePasswordVisibility}
+                                            style={{ position: "absolute", right: "15px", top: "60%", transform: "translateY(-50%)", cursor: "pointer", color: "#6c757d" }}>
+                                            {showPassword ? <FaEyeSlash /> : <FaEye />}
+                                        </span>
+                                    )}
+                                </div>
                             </div>
-                            <span
-                                onClick={togglePasswordVisibility}
-                                style={{ position: "absolute", right: "15px", top: "60%", transform: "translateY(-50%)", cursor: "pointer", color: "#6c757d" }}>
-                                {showPassword ? <FaEyeSlash /> : <FaEye />}
-                            </span>
-                        </div>
+                        ))}
 
                         <div className="text-end mb-3">
                             <Link className="text-danger" to="/forgot/password">Forgot Password?</Link>
@@ -75,7 +78,7 @@ export default function Login() {
                     </form>
 
                     <p className="text-center text-muted">
-                        Don’t have an account?{" "}
+                        Don't have an account?{" "}
                         <Link className="btn btn-link border-0 p-0 mb-1 text-dark" to={"/register"}>Register</Link>
                     </p>
                 </div>

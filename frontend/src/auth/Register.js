@@ -20,12 +20,10 @@ export default function Register() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
         if (formData.password !== formData.confirmPassword) {
             alert("Passwords do not match!");
             return;
         }
-
         try {
             const response = await axios.post('http://localhost:8081/user/register', formData);
             if (response.status === 200) {
@@ -40,7 +38,6 @@ export default function Register() {
                 alert('Registration failed due to server error.');
             }
         }
-
         setFormData({
             name: '',
             email: '',

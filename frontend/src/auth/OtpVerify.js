@@ -14,7 +14,6 @@ export default function OtpVerify() {
         const newOtp = [...otpData];
         newOtp[index] = value;
         setOtp(newOtp);
-
         if (value && index < 5) {
             inputs.current[index + 1].focus();
         }
@@ -33,8 +32,6 @@ export default function OtpVerify() {
             const response = await axios.post("http://localhost:8081/user/otp/verify", {
                 email, otp
             });
-
-
             if (response.status === 200) {
                 alert("OTP verified successfully. You can now reset your password.");
                 navigate('/reset/password', { state: { email } });
@@ -49,7 +46,6 @@ export default function OtpVerify() {
         }
     };
 
-
     return (
         <>
             <div className="container-fluid d-flex justify-content-center align-items-center bg-eceaea" style={{ minHeight: "100vh" }}>
@@ -57,6 +53,7 @@ export default function OtpVerify() {
                     <h3 className="mb-3">Verify OTP</h3>
                     <p className="text-muted mb-5">Enter 4 digit code sent to you at your email.</p>
 
+                    {/* form */}
                     <form onSubmit={handleSubmit}>
                         <div className="d-flex justify-content-between form-floating mb-3">
                             {otpData.map((digit, i) => (
