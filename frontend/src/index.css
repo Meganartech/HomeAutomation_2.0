@@ -20,7 +20,7 @@
     background-color: #eaeaea !important;
 }
 
-.bg-eceaea{
+.bg-eceaea {
     background-color: #eceaea !important;
 }
 
@@ -73,14 +73,19 @@
     width: 80% !important;
 }
 
-
+.sidepanel-active {
+    background-color: #eaeaea;
+    color: #2a2a2c;
+    border-radius: 5px;
+}
 
 @media (min-width: 1440px) {
     .min-height-660 {
         min-height: 660px !important;
         overflow-y: auto !important;
     }
-    .min-height{
+
+    .min-height {
         min-height: 460px !important;
     }
 }

@@ -4,6 +4,7 @@ import { BsCalendar4Week } from 'react-icons/bs';
 import { CgProfile } from 'react-icons/cg';
 
 export default function Navbar() {
+
     return (
         <>
             <div className='d-flex justify-content-between bg-eaeaea'>
