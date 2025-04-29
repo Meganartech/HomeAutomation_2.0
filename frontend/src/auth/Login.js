@@ -21,10 +21,12 @@ export default function Login() {
         e.preventDefault();
 
         try {
-            const response = await axios.post('http://localhost:8081/user/login', formData);
-            if (response.status === 200) {
-                alert(response.data.message);
-                navigate('/login');
+            const {data, status} = await axios.post('http://localhost:8081/user/login', formData);
+            if (status === 200) {
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('role', data.role);
+                alert('Login successful!');
+                navigate('/settings');
             }
         } catch (error) {
             if (error.response?.data?.error) {

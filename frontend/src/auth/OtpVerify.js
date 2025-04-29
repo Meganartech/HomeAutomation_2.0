@@ -29,9 +29,7 @@ export default function OtpVerify() {
         e.preventDefault();
         const otp = otpData.join("");
         try {
-            const response = await axios.post("http://localhost:8081/user/otp/verify", {
-                email, otp
-            });
+            const response = await axios.post("http://localhost:8081/user/otp/verify", { email, otp });
             if (response.status === 200) {
                 alert("OTP verified successfully. You can now reset your password.");
                 navigate('/reset/password', { state: { email } });
