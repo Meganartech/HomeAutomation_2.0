@@ -8,7 +8,6 @@ import { useNavigate } from 'react-router-dom';
 
 export default function Profile() {
     const [formData, setFormData] = useState({ name: '', email: '', mobileNumber: '' });
-    const [loading, setLoading] = useState(false);
     const [editField, setEditField] = useState(null);
     const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [showOtpVerifyModal, setShowOtpVerifyModal] = useState(false);
@@ -25,7 +24,6 @@ export default function Profile() {
                 navigate('/user/login');
                 return;
             }
-            setLoading(true);
             try {
                 const { data, status } = await axios.get("http://localhost:8081/user/profile",
                     { headers: { Authorization: `Bearer ${token}` } }
@@ -42,8 +40,6 @@ export default function Profile() {
                 const message = err.response?.data?.error || 'Profile fetching failed';
                 alert(message);
                 console.log('Profile error:', message);
-            } finally {
-                setLoading(false);
             }
         };
         fetchProfile();
@@ -60,7 +56,6 @@ export default function Profile() {
             navigate('/user/login');
             return;
         }
-        setLoading(true);
         try {
             const { data, status } = await axios.put('http://localhost:8081/user/profile/update', formData,
                 { headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` } }
@@ -74,8 +69,6 @@ export default function Profile() {
             const message = err.response?.data?.error || 'Profile update failed';
             alert(message);
             console.error('Profile update error:', message);
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -147,7 +140,7 @@ export default function Profile() {
                 { headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` } }
             );
             if (status === 200) {
-                alert(data.message); 
+                alert(data.message);
                 setEditField(pendingField);
                 setShowOtpVerifyModal(false);
                 setOtpField(["", "", "", "", "", ""]);
@@ -166,64 +159,56 @@ export default function Profile() {
 
     return (
         <>
-            {loading ? (
-                <div className="text-center my-2">
-                    <div className="spinner-border" role="status">
-                        <span className="visually-hidden">Loading...</span>
+            <div className="container-fluid position-fixed bg-eaeaea p-0">
+                <div className="d-flex">
+                    <div className="p-0" style={{ width: '280px' }}>
+                        <Sidepanel />
                     </div>
-                </div>
-            ) : (
-                <div className="container-fluid position-fixed bg-eaeaea p-0">
-                    <div className="d-flex">
-                        <div className="p-0" style={{ width: '280px' }}>
-                            <Sidepanel />
+                    <div className="p-3" style={{ width: 'calc(100% - 280px)', height: '100vh', overflowY: 'hidden' }}>
+                        <div className='mb-3'>
+                            <Navbar />
                         </div>
-                        <div className="p-3" style={{ width: 'calc(100% - 280px)', height: '100vh', overflowY: 'hidden' }}>
-                            <div className='mb-3'>
-                                <Navbar />
-                            </div>
-                            <Indicator />
-                            <div className="bg-white p-4 rounded shadow-sm mb-3 position-relative" style={{ height: 'calc(100vh - 210px)', overflowY: 'auto' }}>
-                                <div className="container mt-5">
-                                    <form onSubmit={handleProfileSubmit}>
-                                        <div className="form-floating mb-3 position-relative">
-                                            <input type="text" name="name" className="form-control mb-1" placeholder='' value={formData.name} onChange={handleProfileChange} required readOnly={editField !== 'name'} />
-                                            <label className='text-6c757d'>Name</label>
-                                            <span style={{ position: "absolute", right: "15px", top: "60%", transform: "translateY(-50%)", cursor: "pointer", color: editField === 'name' ? "#0d6efd" : "#6c757d" }}
-                                                onClick={() => handleEditClick('name')}>{<FaEdit />}</span>
-                                        </div>
+                        <Indicator />
+                        <div className="bg-white p-4 rounded shadow-sm mb-3 position-relative" style={{ height: 'calc(100vh - 210px)', overflowY: 'auto' }}>
+                            <div className="container mt-5">
+                                <form onSubmit={handleProfileSubmit}>
+                                    <div className="form-floating mb-3 position-relative">
+                                        <input type="text" name="name" className="form-control mb-1" placeholder='' value={formData.name} onChange={handleProfileChange} required readOnly={editField !== 'name'} />
+                                        <label className='text-6c757d'>Name</label>
+                                        <span style={{ position: "absolute", right: "15px", top: "60%", transform: "translateY(-50%)", cursor: "pointer", color: editField === 'name' ? "#0d6efd" : "#6c757d" }}
+                                            onClick={() => handleEditClick('name')}>{<FaEdit />}</span>
+                                    </div>
 
-                                        <div className="form-floating mb-3 position-relative">
-                                            <input type="email" name="email" className="form-control mb-1" placeholder='' value={formData.email} onChange={handleProfileChange} required readOnly={editField !== 'email'} />
-                                            <label className='text-6c757d'>Email</label>
-                                            <span style={{ position: "absolute", right: "15px", top: "60%", transform: "translateY(-50%)", cursor: "pointer", color: editField === 'email' ? "#0d6efd" : "#6c757d" }}
-                                                onClick={() => handleEditClick('email')}>{<FaEdit />}</span>
-                                        </div>
+                                    <div className="form-floating mb-3 position-relative">
+                                        <input type="email" name="email" className="form-control mb-1" placeholder='' value={formData.email} onChange={handleProfileChange} required readOnly={editField !== 'email'} />
+                                        <label className='text-6c757d'>Email</label>
+                                        <span style={{ position: "absolute", right: "15px", top: "60%", transform: "translateY(-50%)", cursor: "pointer", color: editField === 'email' ? "#0d6efd" : "#6c757d" }}
+                                            onClick={() => handleEditClick('email')}>{<FaEdit />}</span>
+                                    </div>
 
-                                        <div className="form-floating mb-3 position-relative">
-                                            <input type="tel" name="mobileNumber" className="form-control mb-1" placeholder='' value={formData.mobileNumber} onChange={handleProfileChange} required readOnly={editField !== 'mobileNumber'} />
-                                            <label className='text-6c757d'>Mobile Number</label>
-                                            <span style={{ position: "absolute", right: "15px", top: "60%", transform: "translateY(-50%)", cursor: "pointer", color: editField === 'mobileNumber' ? "#0d6efd" : "#6c757d" }}
-                                                onClick={() => handleEditClick('mobileNumber')}>{<FaEdit />}</span>
-                                        </div>
+                                    <div className="form-floating mb-3 position-relative">
+                                        <input type="tel" name="mobileNumber" className="form-control mb-1" placeholder='' value={formData.mobileNumber} onChange={handleProfileChange} required readOnly={editField !== 'mobileNumber'} />
+                                        <label className='text-6c757d'>Mobile Number</label>
+                                        <span style={{ position: "absolute", right: "15px", top: "60%", transform: "translateY(-50%)", cursor: "pointer", color: editField === 'mobileNumber' ? "#0d6efd" : "#6c757d" }}
+                                            onClick={() => handleEditClick('mobileNumber')}>{<FaEdit />}</span>
+                                    </div>
 
-                                        <div className='text-end mt-4 mb-3'>
-                                            {editField && (
-                                                <>
-                                                    <button type="button" className="btn btn-outline-secondary me-3" onClick={() => setEditField(null)}>
-                                                        Cancel
-                                                    </button>
-                                                    <button type="submit" className="btn btn-dark">Submit</button>
-                                                </>
-                                            )}
-                                        </div>
-                                    </form>
-                                </div>
+                                    <div className='text-end mt-4 mb-3'>
+                                        {editField && (
+                                            <>
+                                                <button type="button" className="btn btn-outline-secondary me-3" onClick={() => setEditField(null)}>
+                                                    Cancel
+                                                </button>
+                                                <button type="submit" className="btn btn-dark">Submit</button>
+                                            </>
+                                        )}
+                                    </div>
+                                </form>
                             </div>
                         </div>
                     </div>
                 </div>
-            )}
+            </div>
 
             {/* Custom Password Modal */}
             {showPasswordModal && (
@@ -258,7 +243,7 @@ export default function Profile() {
                                         className="form-control text-center mx-1"
                                         style={{ width: "50px", fontSize: "24px", borderBottom: "", borderRadius: "0", background: "transparent" }}
                                         required
-                                       
+
                                     />
                                 ))}
                             </div>

@@ -1,11 +1,13 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { useDispatch } from 'react-redux';
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 export default function Login() {
     const [formData, setFormData] = useState({ email: "", password: "" });
     const [showPassword, setShowPassword] = useState(false);
+    const dispatch = useDispatch();
     const navigate = useNavigate();
 
     const formField = [
@@ -21,10 +23,12 @@ export default function Login() {
         e.preventDefault();
 
         try {
-            const {data, status} = await axios.post('http://localhost:8081/user/login', formData);
+            const { data, status } = await axios.post('http://localhost:8081/user/login', formData);
             if (status === 200) {
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('role', data.role);
+                localStorage.setItem('name', data.name);
+                dispatch({ type: 'SET_USER_DATA', payload: { name: data.name } });
                 alert('Login successful!');
                 navigate('/settings');
             }
