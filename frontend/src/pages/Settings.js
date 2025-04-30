@@ -6,9 +6,6 @@ import Indicator from '../components/Indicator';
 import { Link } from 'react-router-dom';
 
 export default function Settings() {
-
-    
-
     return (
         <>
             <div className="container-fluid position-fixed bg-eaeaea p-0">

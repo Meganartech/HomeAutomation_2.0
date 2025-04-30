@@ -136,6 +136,7 @@ public class UserService {
                     Map<String, String> response = new HashMap<>();
                     response.put("token", token);
                     response.put("role", user.getRole());
+                    response.put("name", user.getName());
                     return ResponseEntity.ok(response);
                 }
             }

@@ -2,10 +2,12 @@ import { MdDashboard, MdDevices, MdOutlineSolarPower } from 'react-icons/md';
 import { FaDoorOpen } from 'react-icons/fa';
 import { BiBarChartAlt2 } from 'react-icons/bi';
 import { FiSettings } from 'react-icons/fi';
+import { useSelector } from 'react-redux';
 
 import Profile from '../assets/Profile.png';
 
 export default function Sidepanel() {
+    const userData = useSelector((state) => state.user);
     return (
         <>
             <div className="bg-2a2a2c text-white min-vh-100 pt-5 px-3">
@@ -13,7 +15,7 @@ export default function Sidepanel() {
                 <hr />
                 <div className="d-flex align-items-center">
                     <img src={Profile} alt="Profile" width={'40px'} height={'40px'} className="rounded-circle mx-3" />
-                    <span className='lead fs-6'>Brooklyn Alice</span>
+                    <span className='lead fs-6'>{userData.name}</span>
                 </div>
                 <hr />
                 <ul className="d-flex flex-column ms-3 list-unstyled">
