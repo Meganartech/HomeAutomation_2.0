@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import project.home.automation.dto.ChangePasswordDTO;
 import project.home.automation.dto.OtpDTO;
 import project.home.automation.dto.UserDTO;
 import project.home.automation.entity.User;
@@ -192,6 +193,40 @@ public class UserService {
             }
 
             return notFound("User not found with the provided email.");
+
+        } catch (Exception e) {
+            return error("Failed to update password: " + e.getMessage());
+        }
+    }
+
+    public ResponseEntity<?> changePassword(String token, ChangePasswordDTO updateRequest) {
+        try {
+            if (token == null || !token.startsWith("Bearer ")) {
+                return unauthorized("Missing token or bearer");
+            }
+
+            String jwtToken = token.substring(7);
+            if (!jwtUtil.isTokenValid(jwtToken)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Collections.singletonMap("error", "Invalid or expired token"));
+            }
+
+            DatabaseReference ref = FirebaseDatabase.getInstance().getReference(COLLECTION_NAME).child(updateRequest.getUserId());
+            DataSnapshot snapshot = getSnapshotSync(ref);
+            if (snapshot == null || !snapshot.exists()) {
+                return notFound("User not found with the provided ID.");
+            }
+
+            User user = snapshot.getValue(User.class);
+            if (user == null) {
+                return error("Failed to parse user data.");
+            }
+
+            if (!passwordEncoder.matches(updateRequest.getCurrentPassword(), user.getPassword())) {
+                return unauthorized("Current password is incorrect.");
+            }
+
+            ref.child("password").setValueAsync(passwordEncoder.encode(updateRequest.getNewPassword()));
+            return ok("Password updated successfully.");
 
         } catch (Exception e) {
             return error("Failed to update password: " + e.getMessage());

@@ -1,13 +1,11 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { useDispatch } from 'react-redux';
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 export default function Login() {
     const [formData, setFormData] = useState({ email: "", password: "" });
     const [showPassword, setShowPassword] = useState(false);
-    const dispatch = useDispatch();
     const navigate = useNavigate();
 
     const formField = [
@@ -27,10 +25,8 @@ export default function Login() {
             if (status === 200) {
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('role', data.role);
-                localStorage.setItem('name', data.name);
-                dispatch({ type: 'SET_USER_DATA', payload: { name: data.name } });
                 alert('Login successful!');
-                navigate('/settings');
+                navigate('/settings/profile');
             }
         } catch (error) {
             if (error.response?.data?.error) {
@@ -60,13 +56,13 @@ export default function Login() {
                     <form onSubmit={handleSubmit}>
                         {formField.map((ref, index) => (
                             <div key={index} className="mb-3 position-relative">
-                                <div className="form-floating">
-                                    <input type={ref.type} name={ref.name} className="form-control" placeholder={ref.placeholder} value={formData[ref.name]} onChange={handleChange} required />
+                                <div className="mb-3">
                                     <label className="text-6c757d">{ref.label}</label>
+                                    <input type={ref.type} name={ref.name} className="form-control" placeholder={ref.placeholder} value={formData[ref.name]} onChange={handleChange} required />
                                     {ref.name === "password" && (
                                         <span
                                             onClick={togglePasswordVisibility}
-                                            style={{ position: "absolute", right: "15px", top: "60%", transform: "translateY(-50%)", cursor: "pointer", color: "#6c757d" }}>
+                                            style={{ position: "absolute", right: "15px", top: "65%", transform: "translateY(-50%)", cursor: "pointer", color: "#6c757d" }}>
                                             {showPassword ? <FaEyeSlash /> : <FaEye />}
                                         </span>
                                     )}

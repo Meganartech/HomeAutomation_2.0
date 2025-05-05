@@ -1,11 +1,7 @@
-* {
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-}
-
 .form-control {
-    border: 0px solid #ced4da !important;
-    border-radius: 0px !important;
-    border-bottom: 1px solid #ced4da !important;
+    /* border: 0px solid #ced4da !important;
+     border-radius: 0px !important;*/
+    border: 1px solid #ced4da !important;  
 }
 
 .form-control:focus {
@@ -16,6 +12,10 @@
     color: #6c757d;
 }
 
+.bg-ffffff {
+    background-color: #ffffff !important;
+}
+
 .bg-eaeaea {
     background-color: #eaeaea !important;
 }
@@ -24,8 +24,8 @@
     background-color: #eceaea !important;
 }
 
-.bg-2a2a2c {
-    background-color: #2a2a2c !important;
+.bg-1C1C1E {
+    background-color: #1C1C1E !important;
 }
 
 .form-floating>label {
@@ -55,6 +55,11 @@
     margin-top: 104.5px !important;
 }
 
+.py-12px {
+    padding-top: 12px !important;
+    padding-bottom: 12px !important;
+}
+
 .rounded-4 {
     border-radius: 20px !important
 }
@@ -75,8 +80,15 @@
 
 .sidepanel-active {
     background-color: #eaeaea;
-    color: #2a2a2c;
+    color: #1C1C1E;
     border-radius: 5px;
+}
+
+.sidepanel-hover:hover {
+    background-color: #eaeaea;
+    color: #1C1C1E;
+    border-radius: 5px;
+    cursor: pointer;
 }
 
 @media (min-width: 1440px) {
@@ -88,4 +100,9 @@
     .min-height {
         min-height: 460px !important;
     }
+}
+
+
+::-webkit-scrollbar {
+    width: 0px;
 }
