@@ -38,9 +38,9 @@ export default function ForgotPassword() {
 
                     {/* form */}
                     <form onSubmit={handleSubmit}>
-                        <div className="form-floating mb-3">
+                        <div className="mb-3">
+                            <label className="">Email</label>
                             <input type="email" name="email" className="form-control mb-1" placeholder="" value={formData.email} onChange={handleChange} required />
-                            <label className="text-6c757d">Email</label>
                         </div>
 
                         <div className="mt-10 mb-3">

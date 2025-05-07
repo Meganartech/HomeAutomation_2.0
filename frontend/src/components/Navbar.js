@@ -1,29 +1,42 @@
-import { FiSettings } from 'react-icons/fi';
-import { IoMdNotificationsOutline } from 'react-icons/io';
-import { BsCalendar4Week } from 'react-icons/bs';
-import { CgProfile } from 'react-icons/cg';
 import { useSelector } from 'react-redux';
+import { FiSettings } from 'react-icons/fi';
+import { FiBell } from 'react-icons/fi';
+import { FiCalendar } from 'react-icons/fi';
+import { CgProfile } from 'react-icons/cg';
 import { useNavigate } from 'react-router-dom';
+import '@fontsource/roboto/300.css';
 
 export default function Navbar() {
+
+    const customStyle = {
+        fontFamily: 'roboto',
+        fontWeight: '300',
+        lineHeight: '100%',
+        letterSpacing: '0',
+    };
+
     const userData = useSelector((state) => state.user);
+
     const navigate = useNavigate();
 
     return (
         <>
-            <div className='d-flex justify-content-between bg-eaeaea'>
+            <div className='d-flex justify-content-between bg-eaeaea m-3'>
+
                 <div>
-                    <h5 className="fw-normal">GOOD MORNING, <strong>{userData.name}</strong></h5>
-                    <small>Your Performance, Summary This Week</small>
+                    <div style={{ ...customStyle, fontSize: '20px', textTransform: 'uppercase' }}>GOOD MORNING , <strong>{userData.fullName}</strong></div>
+                    <small style={{ ...customStyle, fontSize: '15px' }}>Your Performance, Summary This Week</small>
                 </div>
+
                 <div className="d-flex align-items-center">
-                    <div className="d-flex border border-dark rounded px-3 py-2 mx-3">
-                        <BsCalendar4Week className='fs-5 me-5' />{" "}{new Date().toLocaleDateString()}
+                    <div className="d-flex border border-dark rounded p-2 mx-3">
+                        <FiCalendar className='fs-4 me-5' />{" "}{new Date().toLocaleDateString('en-GB')}
                     </div>
-                    <IoMdNotificationsOutline className='fs-5 mx-3' />
-                    <CgProfile onClick={() => { localStorage.removeItem("token"); localStorage.removeItem("role"); navigate("/"); }} className='fs-5 mx-3' />
-                    <FiSettings className='fs-5 mx-3' />
+                    <FiBell className='fs-4 mx-3' />
+                    <CgProfile onClick={() => { localStorage.removeItem("token"); localStorage.removeItem("role"); navigate("/"); }} className='fs-4 mx-3' />
+                    <FiSettings className='fs-4 mx-3' />
                 </div>
+
             </div>
         </>
     );

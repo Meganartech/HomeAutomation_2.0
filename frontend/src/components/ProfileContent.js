@@ -1,12 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
+import { useNavigate, Link } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { setUserData } from '../redux/slice';
 import { FaEdit } from "react-icons/fa";
-import Sidepanel from '../components/Sidepanel';
-import Navbar from '../components/Navbar';
-import Indicator from '../components/Indicator';
-import { useNavigate } from 'react-router-dom';
 
-export default function Profile() {
+export default function ProfileContent() {
     const [formData, setFormData] = useState({ name: '', email: '', mobileNumber: '' });
     const [editField, setEditField] = useState(null);
     const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -16,6 +15,8 @@ export default function Profile() {
     const [pendingField, setPendingField] = useState(null);
     const inputs = useRef([]);
     const navigate = useNavigate();
+
+    const dispatch = useDispatch();
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -34,6 +35,7 @@ export default function Profile() {
                         email: data.email || "",
                         mobileNumber: data.mobileNumber || "",
                     });
+                    dispatch(setUserData({ userId: data.userId, fullName: data.name }));
                     console.log('Profile fetched successfully');
                 }
             } catch (err) {
@@ -43,7 +45,7 @@ export default function Profile() {
             }
         };
         fetchProfile();
-    }, [navigate]);
+    }, [navigate, dispatch]);
 
     const handleProfileChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -62,6 +64,7 @@ export default function Profile() {
             );
             if (status === 200) {
                 alert(data.message);
+                dispatch(setUserData({ fullName: formData.name }));
                 console.log('Profile updated successfully');
                 setEditField(null);
             }
@@ -156,71 +159,74 @@ export default function Profile() {
         }
     };
 
-
     return (
         <>
-            <div className="container-fluid position-fixed bg-eaeaea p-0">
-                <div className="d-flex">
-                    <div className="p-0" style={{ width: '280px' }}>
-                        <Sidepanel />
-                    </div>
-                    <div className="p-3" style={{ width: 'calc(100% - 280px)', height: '100vh', overflowY: 'hidden' }}>
-                        <div className='mb-3'>
-                            <Navbar />
+            <div className="container px-5 py-4">
+                <div style={{ fontSize: '24px', lineHeight: '100%', letterSpacing: '0' }} className="mb-3">Profile</div>
+
+                <form onSubmit={handleProfileSubmit}>
+
+                    <div style={{ height: '300px', overflowY: 'auto' }}>
+                        <div className="position-relative mb-3">
+                            <label htmlFor="name" className="form-label fw-bold">Name</label>
+                            <input type="text" className="form-control" id="name" name='name' placeholder="Name" value={formData.name} onChange={handleProfileChange} required readOnly={editField !== 'name'} />
+                            <span style={{ position: "absolute", right: "15px", top: "70%", transform: "translateY(-50%)", cursor: "pointer", color: editField === 'name' ? "#0d6efd" : "#6c757d" }}
+                                onClick={() => handleEditClick('name')}>{<FaEdit />}</span>
                         </div>
-                        <Indicator />
-                        <div className="bg-white p-4 rounded shadow-sm mb-3 position-relative" style={{ height: 'calc(100vh - 210px)', overflowY: 'auto' }}>
-                            <div className="container mt-5">
-                                <form onSubmit={handleProfileSubmit}>
-                                    <div className="form-floating mb-3 position-relative">
-                                        <input type="text" name="name" className="form-control mb-1" placeholder='' value={formData.name} onChange={handleProfileChange} required readOnly={editField !== 'name'} />
-                                        <label className='text-6c757d'>Name</label>
-                                        <span style={{ position: "absolute", right: "15px", top: "60%", transform: "translateY(-50%)", cursor: "pointer", color: editField === 'name' ? "#0d6efd" : "#6c757d" }}
-                                            onClick={() => handleEditClick('name')}>{<FaEdit />}</span>
-                                    </div>
 
-                                    <div className="form-floating mb-3 position-relative">
-                                        <input type="email" name="email" className="form-control mb-1" placeholder='' value={formData.email} onChange={handleProfileChange} required readOnly={editField !== 'email'} />
-                                        <label className='text-6c757d'>Email</label>
-                                        <span style={{ position: "absolute", right: "15px", top: "60%", transform: "translateY(-50%)", cursor: "pointer", color: editField === 'email' ? "#0d6efd" : "#6c757d" }}
-                                            onClick={() => handleEditClick('email')}>{<FaEdit />}</span>
-                                    </div>
+                        <div className="position-relative mb-3">
+                            <label htmlFor="contact" className="form-label fw-bold">Contact Number</label>
+                            <input type="tel" className="form-control" id="contact" name='mobileNumber' placeholder="Contact Number" value={formData.mobileNumber} onChange={handleProfileChange} required readOnly={editField !== 'mobileNumber'} />
+                            <span style={{ position: "absolute", right: "15px", top: "70%", transform: "translateY(-50%)", cursor: "pointer", color: editField === 'mobileNumber' ? "#0d6efd" : "#6c757d" }}
+                                onClick={() => handleEditClick('mobileNumber')}>{<FaEdit />}</span>
+                        </div>
 
-                                    <div className="form-floating mb-3 position-relative">
-                                        <input type="tel" name="mobileNumber" className="form-control mb-1" placeholder='' value={formData.mobileNumber} onChange={handleProfileChange} required readOnly={editField !== 'mobileNumber'} />
-                                        <label className='text-6c757d'>Mobile Number</label>
-                                        <span style={{ position: "absolute", right: "15px", top: "60%", transform: "translateY(-50%)", cursor: "pointer", color: editField === 'mobileNumber' ? "#0d6efd" : "#6c757d" }}
-                                            onClick={() => handleEditClick('mobileNumber')}>{<FaEdit />}</span>
-                                    </div>
+                        <div className="position-relative mb-3">
+                            <label htmlFor="email" className="form-label fw-bold">Email</label>
+                            <input type="email" className="form-control" id="email" name='email' placeholder="Email" value={formData.email} onChange={handleProfileChange} required readOnly={editField !== 'email'} />
+                            <span style={{ position: "absolute", right: "15px", top: "70%", transform: "translateY(-50%)", cursor: "pointer", color: editField === 'email' ? "#0d6efd" : "#6c757d" }}
+                                onClick={() => handleEditClick('email')}>{<FaEdit />}</span>
+                        </div>
 
-                                    <div className='text-end mt-4 mb-3'>
-                                        {editField && (
-                                            <>
-                                                <button type="button" className="btn btn-outline-secondary me-3" onClick={() => setEditField(null)}>
-                                                    Cancel
-                                                </button>
-                                                <button type="submit" className="btn btn-dark">Submit</button>
-                                            </>
-                                        )}
-                                    </div>
-                                </form>
-                            </div>
+                        {/* <div className="mb-3">
+                            <label htmlFor="email" className="form-label fw-bold">Email</label>
+                            <input type="email" className="form-control" id="email" placeholder="Email" />
+                        </div> */}
+
+                        <div className="text-end mb-3">
+                            <Link to={"/settings/change-password"} className="text-decoration-none text-dark">
+                                Want to Change Your Password?
+                            </Link>
                         </div>
                     </div>
-                </div>
+
+                    <div className='text-end my-5'>
+                        {editField && (
+                            <>
+                                <button type="button" className="btn btn-outline-secondary me-3" onClick={() => setEditField(null)}>
+                                    Cancel
+                                </button>
+                                <button type="submit" className="btn btn-dark">Submit</button>
+                            </>
+                        )}
+                    </div>
+
+                </form>
+
             </div>
 
             {/* Custom Password Modal */}
             {showPasswordModal && (
                 <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1050 }}>
-                    <div style={{ background: "white", padding: "30px", borderRadius: "10px", width: "90%", maxWidth: "400px", boxShadow: "0px 0px 10px rgba(0,0,0,0.25)", position: "relative" }}>
-                        <h5 className="mb-3 text-center">Verify Password</h5>
-                        <input
-                            type="password" className="form-control mb-3" placeholder="Enter your password" value={passwordField} onChange={(e) => setPasswordField(e.target.value)} autoFocus />
-                        <div className="d-flex justify-content-end">
-                            <button type="button" className="btn btn-outline-secondary me-2" onClick={() => { setShowPasswordModal(false); setPasswordField(''); setPendingField(null); }}>Cancel</button>
-                            <button type="button" className="btn btn-dark" onClick={handlePasswordVerifySubmit}>Verify</button>
-                        </div>
+                    <div style={{ backgroundColor: "#ffffff", borderRadius: "10px", width: "100%", maxWidth: "400px", boxShadow: "0px 0px 10px rgba(0,0,0,0.25)", position: "relative" }} className='p-3'>
+                        <div style={{ fontWeight: '600', fontSize: '20px', lineHeight: '100%', letterSpacing: '0' }} className='text-center mb-4'>Verify Password</div>
+                        <form>
+                            <input type="password" className="form-control mb-4" placeholder="Enter your password" value={passwordField} onChange={(e) => setPasswordField(e.target.value)} required autoFocus />
+                            <div className="d-flex justify-content-around">
+                                <button type="button" className="btn btn-outline-dark px-5 " onClick={() => { setShowPasswordModal(false); setPasswordField(''); setPendingField(null); }}>Cancel</button>
+                                <button type="button" className="btn btn-dark px-5" onClick={handlePasswordVerifySubmit}>Verify</button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}
@@ -241,10 +247,7 @@ export default function Profile() {
                                         onChange={(e) => handleOtpVerifyChange(i, e.target.value)}
                                         onKeyDown={(e) => handleKeyDown(i, e)}
                                         className="form-control text-center mx-1"
-                                        style={{ width: "50px", fontSize: "24px", borderBottom: "", borderRadius: "0", background: "transparent" }}
-                                        required
-
-                                    />
+                                        style={{ width: "50px", fontSize: "24px", borderBottom: "", borderRadius: "0", background: "transparent" }} required />
                                 ))}
                             </div>
                             <div className="d-flex justify-content-end">
