@@ -2,9 +2,7 @@ package project.home.automation.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import project.home.automation.dto.ChangePasswordDTO;
-import project.home.automation.dto.OtpDTO;
-import project.home.automation.dto.UserDTO;
+import project.home.automation.dto.*;
 import project.home.automation.service.UserService;
 
 @RestController
@@ -65,4 +63,30 @@ public class UserController {
     public ResponseEntity<?> changePassword(@RequestHeader("Authorization") String token, @RequestBody ChangePasswordDTO updateRequest) {
         return userService.changePassword(token, updateRequest);
     }
+
+    @PostMapping("/room")
+    public ResponseEntity<?> postRoom(@RequestHeader("Authorization") String token, @RequestBody RoomDTO registerRequest) {
+        return userService.postRoom(token, registerRequest);
+    }
+
+    @GetMapping("/room/list")
+    public ResponseEntity<?> getRoom(@RequestHeader("Authorization") String token) {
+        return userService.getRoom(token);
+    }
+
+    @PostMapping("/scan")
+    public ResponseEntity<?> postScan(@RequestHeader("Authorization") String token, @RequestParam String binding) {
+        return userService.postScan(token, binding);
+    }
+
+    @GetMapping("/inbox")
+    public ResponseEntity<?> getInbox(@RequestHeader("Authorization") String token) {
+        return userService.getInbox(token);
+    }
+
+    @PostMapping("/thing")
+    public ResponseEntity<?> postThing(@RequestHeader("Authorization") String token, @RequestBody ThingDTO thingRequest) {
+        return userService.postThing(token, thingRequest);
+    }
+
 }

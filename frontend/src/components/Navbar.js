@@ -21,10 +21,10 @@ export default function Navbar() {
 
     return (
         <>
-            <div className='d-flex justify-content-between bg-eaeaea m-3'>
+            <div className='d-flex justify-content-between bg-eaeaea my-3'>
 
                 <div>
-                    <div style={{ ...customStyle, fontSize: '20px', textTransform: 'uppercase' }}>GOOD MORNING , <strong>{userData.fullName}</strong></div>
+                    <div style={{ ...customStyle, fontSize: '20px', textTransform: 'uppercase' }}>GOOD MORNING , <strong style={{ textTransform: 'capitalize' }}>{userData.fullName}</strong></div>
                     <small style={{ ...customStyle, fontSize: '15px' }}>Your Performance, Summary This Week</small>
                 </div>
 
