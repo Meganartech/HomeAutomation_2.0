@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import project.home.automation.dto.*;
 import project.home.automation.entity.Room;
@@ -157,8 +158,7 @@ public class UserService {
 
             for (DataSnapshot userSnapshot : snapshot.getChildren()) {
                 User user = userSnapshot.getValue(User.class);
-                if (user != null && user.getEmail().equalsIgnoreCase(loginRequest.getEmail()) &&
-                        passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
+                if (user != null && user.getEmail().equalsIgnoreCase(loginRequest.getEmail()) && passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
 
                     String token = jwtUtil.generateToken(user.getEmail());
                     Map<String, String> response = new HashMap<>();
@@ -576,66 +576,478 @@ public class UserService {
         }
     }
 
-    public ResponseEntity<?> postThing(String token, ThingDTO thingRequest) {
-        if (token == null || !token.startsWith("Bearer ")) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Collections.singletonMap("error", "Authorization header missing"));
-        }
+//    public ResponseEntity<?> postThing(String token, ThingDTO thingRequest) {
+//        if (token == null || !token.startsWith("Bearer ")) {
+//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Collections.singletonMap("error", "Authorization header missing"));
+//        }
+//
+//        String jwtToken = token.substring(7);
+//
+//        try {
+//            if (!jwtUtil.isTokenValid(jwtToken)) {
+//                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Collections.singletonMap("error", "Invalid or expired token"));
+//            }
+//
+//            String email = jwtUtil.extractEmail(jwtToken);
+//
+//            // Get user from Firebase
+//            DatabaseReference userRef = FirebaseDatabase.getInstance().getReference(COLLECTION_NAME1);
+//            DataSnapshot userSnapshot = getSnapshotSync(userRef);
+//            if (userSnapshot == null) return error("Firebase error while accessing user");
+//
+//            User user = findUserByEmail(userSnapshot, email);
+//            if (user == null) return notFound("User not found");
+//
+//            // Fetch roomId based on roomName
+//            if (thingRequest.getRoomName() != null && !thingRequest.getRoomName().isEmpty()) {
+//                DatabaseReference roomRef = FirebaseDatabase.getInstance().getReference(COLLECTION_NAME2);
+//                DataSnapshot roomSnapshot = getSnapshotSync(roomRef);
+//                if (roomSnapshot == null) return error("Firebase error while accessing room");
+//
+//                String matchedRoomId = null;
+//                for (DataSnapshot roomNode : roomSnapshot.getChildren()) {
+//                    String roomName = roomNode.child("roomName").getValue(String.class);
+//                    String ownerId = roomNode.child("userId").getValue(String.class);
+//
+//                    if (thingRequest.getRoomName().equalsIgnoreCase(roomName) &&
+//                            user.getUserId().equals(ownerId)) {
+//                        matchedRoomId = roomNode.child("roomId").getValue(String.class);
+//                        break;
+//                    }
+//                }
+//
+//                if (matchedRoomId == null) {
+//                    return notFound("Room not found for given name and user");
+//                }
+//
+//                // Set roomId using the matched roomId
+//                thingRequest.setRoomId(matchedRoomId);
+//            } else {
+//                return ResponseEntity.badRequest().body(Collections.singletonMap("error", "roomName is required"));
+//            }
+//
+//            // Validate roomId after roomName lookup
+//            if (thingRequest.getRoomId() == null || thingRequest.getRoomId().isEmpty()) {
+//                return ResponseEntity.badRequest().body(Collections.singletonMap("error", "roomId is required"));
+//            }
+//
+//            // Get room by roomId
+//            DatabaseReference roomRef = FirebaseDatabase.getInstance().getReference(COLLECTION_NAME2).child(thingRequest.getRoomId());
+//            DataSnapshot roomSnapshot = getSnapshotSync(roomRef);
+//            if (roomSnapshot == null || !roomSnapshot.exists()) {
+//                return notFound("Room not found");
+//            }
+//
+//            String roomOwnerId = roomSnapshot.child("userId").getValue(String.class);
+//            if (!user.getUserId().equals(roomOwnerId)) {
+//                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Collections.singletonMap("error", "User does not own the room"));
+//            }
+//
+//            // UID generation
+//            String sanitizedUsername = user.getUserId().toLowerCase().replaceAll("[^a-z0-9_-]", "_");
+//            String sanitizedLabel = thingRequest.getLabel().toLowerCase().replaceAll("[^a-z0-9_-]", "_");
+//
+//            String generatedUID;
+//            String bridgeUID = null;
+//            ObjectMapper mapper = new ObjectMapper();
+//            ObjectNode rootNode = mapper.createObjectNode();
+//
+//            switch (thingRequest.getThingTypeUID()) {
+//                case "mqtt:topic":
+//                    bridgeUID = "mqtt:broker:mybroker";
+//                    generatedUID = "mqtt:topic:mybroker:" + sanitizedUsername + "_" + sanitizedLabel;
+//                    rootNode.put("bridgeUID", bridgeUID);
+//                    break;
+//
+//                case "zwave:device":
+//                    bridgeUID = "zwave:controller:zwave_network";
+//                    generatedUID = "zwave:device:zwave_network:" + sanitizedUsername + "_" + sanitizedLabel;
+//                    rootNode.put("bridgeUID", bridgeUID);
+//                    break;
+//
+//                case "knx:device":
+//                    bridgeUID = "knx:bridge:myknx";
+//                    generatedUID = "knx:device:myknx:" + sanitizedUsername + "_" + sanitizedLabel;
+//                    rootNode.put("bridgeUID", bridgeUID);
+//                    break;
+//
+//                case "network:pingdevice":
+//                    if (thingRequest.getHost() == null || thingRequest.getHost().isEmpty()) {
+//                        return ResponseEntity.badRequest().body(Collections.singletonMap("error", "Host is required for network devices"));
+//                    }
+//                    generatedUID = "network:pingdevice:" + sanitizedUsername + "_" + sanitizedLabel;
+//                    ObjectNode pingConfig = mapper.createObjectNode();
+//                    pingConfig.put("hostname", thingRequest.getHost());
+//                    pingConfig.put("timeout", 5000);
+//                    pingConfig.put("refreshInterval", 60000);
+//                    rootNode.set("configuration", pingConfig);
+//                    break;
+//
+//                case "wiz:color-bulb":
+//                    if (thingRequest.getHost() == null || thingRequest.getHost().isEmpty()) {
+//                        return ResponseEntity.badRequest().body(Collections.singletonMap("error", "Host is required for WiZ devices"));
+//                    }
+//                    if (thingRequest.getMacAddress() == null || thingRequest.getMacAddress().isEmpty()) {
+//                        return ResponseEntity.badRequest().body(Collections.singletonMap("error", "macAddress is required for WiZ devices"));
+//                    }
+//                    generatedUID = "wiz:color-bulb:" + sanitizedUsername + "_" + sanitizedLabel;
+//                    ObjectNode wizConfig = mapper.createObjectNode();
+//                    wizConfig.put("ipAddress", thingRequest.getHost());
+//                    wizConfig.put("pollingInterval", 60);
+//                    wizConfig.put("macAddress", thingRequest.getMacAddress()); // Add macAddress here
+//                    rootNode.set("configuration", wizConfig);
+//                    break;
+//
+//                default:
+//                    return ResponseEntity.badRequest().body(Collections.singletonMap("error", "Unsupported thing type"));
+//            }
+//
+//            // Compose OpenHAB JSON
+//            rootNode.put("UID", generatedUID);
+//            rootNode.put("label", thingRequest.getLabel());
+//            rootNode.put("thingTypeUID", thingRequest.getThingTypeUID());
+//
+//            ArrayNode channelsNode = mapper.createArrayNode();
+//            rootNode.set("channels", channelsNode);
+//            if (!rootNode.has("configuration")) {
+//                rootNode.set("configuration", mapper.createObjectNode());
+//            }
+//
+//            // Send to OpenHAB
+//            String openHABUrl = "http://localhost:8080/rest/things";
+//            String jsonPayload = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(rootNode);
+//
+//            HttpHeaders headers = new HttpHeaders();
+//            headers.setContentType(MediaType.APPLICATION_JSON);
+//            headers.setBearerAuth(openHABToken);
+//            HttpEntity<String> request = new HttpEntity<>(jsonPayload, headers);
+//
+//            RestTemplate restTemplate = new RestTemplate();
+//            ResponseEntity<String> openHABResponse = restTemplate.postForEntity(openHABUrl, request, String.class);
+//
+//            if (openHABResponse.getStatusCode() == HttpStatus.CREATED) {
+//                // Store device under room/{roomId}/devices/{thingUID}
+//                DatabaseReference deviceRef = FirebaseDatabase.getInstance()
+//                        .getReference("room")
+//                        .child(thingRequest.getRoomId())
+//                        .child("devices")
+//                        .child(generatedUID);
+//
+//                Map<String, Object> deviceMap = new HashMap<>();
+//                deviceMap.put("thingUID", generatedUID);
+//                deviceMap.put("thingTypeUID", thingRequest.getThingTypeUID());
+//                deviceMap.put("label", thingRequest.getLabel());
+//                deviceMap.put("host", thingRequest.getHost());
+//                deviceMap.put("userId", user.getUserId());
+//                deviceMap.put("roomId", thingRequest.getRoomId());
+//
+//                deviceRef.setValueAsync(deviceMap);
+//
+//                return ResponseEntity.ok(Collections.singletonMap("message", "Device added successfully to OpenHAB and Firebase"));
+//            } else {
+//                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                        .body(Collections.singletonMap("error", "Failed to add device to OpenHAB"));
+//            }
+//
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Collections.singletonMap("error", "Error: " + e.getMessage()));
+//        }
+//    }
 
-        String jwtToken = token.substring(7);
+//    public ResponseEntity<?> autoCreateAndLinkItems(String token, String thingUID) {
+//        try {
+//            // Step 1: JWT Validation
+//            if (token == null || !token.startsWith("Bearer ")) {
+//                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+//                        .body(Collections.singletonMap("error", "Missing token or bearer"));
+//            }
+//
+//            String jwtToken = token.substring(7);
+//            if (!jwtUtil.isTokenValid(jwtToken)) {
+//                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Collections.singletonMap("error", "Invalid token"));
+//            }
+//
+//            String email = jwtUtil.extractEmail(jwtToken);
+//
+//            // Firebase user lookup (assuming your methods exist)
+//            DatabaseReference userRef = FirebaseDatabase.getInstance().getReference(COLLECTION_NAME1);
+//            DataSnapshot snapshot = getSnapshotSync(userRef);
+//            if (snapshot == null) return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Collections.singletonMap("error", "Firebase error while accessing user"));
+//
+//            User user = findUserByEmail(snapshot, email);
+//            if (user == null) return ResponseEntity.status(HttpStatus.NOT_FOUND)
+//                    .body(Collections.singletonMap("error", "User not found"));
+//
+//            // Step 2: Fetch Thing details (including channels)
+//            RestTemplate restTemplate = new RestTemplate();
+//            HttpHeaders headers = new HttpHeaders();
+//            headers.setBearerAuth(openHABToken);
+//            headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+//
+//            HttpEntity<String> entity = new HttpEntity<>(headers);
+//            String url = "http://localhost:8080/rest/things/" + thingUID;
+//
+//            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
+//            if (!response.getStatusCode().is2xxSuccessful()) {
+//                return ResponseEntity.status(response.getStatusCode()).body(Collections.singletonMap("error", "Failed to fetch thing info"));
+//            }
+//
+//            JSONObject thingJson = new JSONObject(response.getBody());
+//            JSONArray channelsArray = thingJson.getJSONArray("channels");
+//
+//            List<String> linkedItems = new ArrayList<>();
+//
+//            for (int i = 0; i < channelsArray.length(); i++) {
+//                JSONObject channel = channelsArray.getJSONObject(i);
+//                String channelUID = channel.getString("uid");           // e.g., wiz:color-bulb:user001:color
+//                String channelId = channel.getString("id");             // e.g., color
+//                String itemType = channel.optString("itemType", null);  // e.g., Color
+//
+//                if (itemType == null || itemType.isEmpty()) continue; // skip if no itemType
+//
+//                // Step 3: Generate itemName - replace ":" and "-" with "_"
+//                String itemName = (thingUID + "_" + channelId).replaceAll("[:\\-]", "_");
+//
+//                // Step 4: Create Item via POST /rest/items/{itemName}
+//                JSONObject itemJson = new JSONObject();
+//                itemJson.put("type", itemType);
+//                itemJson.put("label", "Auto " + itemName);
+//                itemJson.put("category", "Light");
+//                itemJson.put("tags", new JSONArray());
+//                itemJson.put("groupNames", new JSONArray());
+//
+//                HttpHeaders itemHeaders = new HttpHeaders();
+//                itemHeaders.setBearerAuth(openHABToken);
+//                itemHeaders.setContentType(MediaType.APPLICATION_JSON);
+//
+//                HttpEntity<String> itemEntity = new HttpEntity<>(itemJson.toString(), itemHeaders);
+//
+//                String itemUrl = "http://localhost:8080/rest/items/" + itemName;
+//
+//                restTemplate.exchange(itemUrl, HttpMethod.POST, itemEntity, String.class);
+//
+//                // Step 5: Link Channel to Item via PUT /rest/links/{itemName}/{channelUID}
+//                HttpHeaders linkHeaders = new HttpHeaders();
+//                linkHeaders.setBearerAuth(openHABToken);
+//                linkHeaders.setContentType(MediaType.TEXT_PLAIN);
+//
+//                HttpEntity<String> linkEntity = new HttpEntity<>("", linkHeaders);
+//
+//                String linkUrl = "http://localhost:8080/rest/links/" + itemName + "/" + channelUID;
+//
+//                restTemplate.exchange(linkUrl, HttpMethod.PUT, linkEntity, String.class);
+//
+//                linkedItems.add(itemName);
+//            }
+//
+//            return ResponseEntity.ok(Collections.singletonMap("linkedItems", linkedItems));
+//
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Collections.singletonMap("error", "Something went wrong: " + e.getMessage()));
+//        }
+//    }
 
+//    public ResponseEntity<?> autoCreateAndLinkItems(String token, String thingUID) {
+//        try {
+//            // Step 1: JWT Validation
+//            if (token == null || !token.startsWith("Bearer ")) {
+//                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+//                        .body(Collections.singletonMap("error", "Missing token or bearer"));
+//            }
+//
+//            String jwtToken = token.substring(7);
+//            if (!jwtUtil.isTokenValid(jwtToken)) {
+//                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+//                        .body(Collections.singletonMap("error", "Invalid token"));
+//            }
+//
+//            String email = jwtUtil.extractEmail(jwtToken);
+//
+//            // Step 2: Firebase user lookup
+//            DatabaseReference userRef = FirebaseDatabase.getInstance().getReference(COLLECTION_NAME1);
+//            DataSnapshot snapshot = getSnapshotSync(userRef);
+//            if (snapshot == null) {
+//                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                        .body(Collections.singletonMap("error", "Firebase error while accessing user"));
+//            }
+//
+//            User user = findUserByEmail(snapshot, email);
+//            if (user == null) {
+//                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+//                        .body(Collections.singletonMap("error", "User not found"));
+//            }
+//
+//            // Step 3: Fetch Thing details (including channels) from OpenHAB
+//            RestTemplate restTemplate = new RestTemplate();
+//            HttpHeaders headers = new HttpHeaders();
+//            headers.setBearerAuth(openHABToken);
+//            headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+//
+//            HttpEntity<String> entity = new HttpEntity<>(headers);
+//            String url = "http://localhost:8080/rest/things/" + thingUID;
+//
+//            ResponseEntity<String> response;
+//            try {
+//                response = restTemplate.exchange(url, HttpMethod.GET, entity, String.class);
+//            } catch (RestClientException e) {
+//                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                        .body(Collections.singletonMap("error", "Failed to fetch thing info: " + e.getMessage()));
+//            }
+//
+//            if (!response.getStatusCode().is2xxSuccessful()) {
+//                return ResponseEntity.status(response.getStatusCode())
+//                        .body(Collections.singletonMap("error", "Failed to fetch thing info: " + response.getStatusCode()));
+//            }
+//
+//            JSONObject thingJson = new JSONObject(response.getBody());
+//            JSONArray channelsArray = thingJson.getJSONArray("channels");
+//
+//            List<String> linkedItems = new ArrayList<>();
+//
+//            // Step 4: Process each channel
+//            for (int i = 0; i < channelsArray.length(); i++) {
+//                JSONObject channel = channelsArray.getJSONObject(i);
+//                String channelUID = channel.getString("uid");           // e.g., wiz:color-bulb:user001:color
+//                String channelId = channel.getString("id");             // e.g., color
+//                String itemType = channel.optString("itemType", null);  // e.g., Color
+//
+//                if (itemType == null || itemType.isEmpty()) {
+//                    continue; // Skip if no itemType
+//                }
+//
+//                // Step 5: Generate itemName - replace ":" and "-" with "_"
+//                String itemName = (thingUID + "_" + channelId).replaceAll("[:\\-]", "_");
+//
+//                // Step 6: Create Item via PUT /rest/items/{itemName}
+//                JSONObject itemJson = new JSONObject();
+//                itemJson.put("type", itemType);
+//                itemJson.put("name", itemName); // Explicitly include the name
+//                itemJson.put("label", "Auto " + itemName);
+//                itemJson.put("category", "Light");
+//                itemJson.put("tags", new JSONArray());
+//                itemJson.put("groupNames", new JSONArray());
+//
+//                HttpHeaders itemHeaders = new HttpHeaders();
+//                itemHeaders.setBearerAuth(openHABToken);
+//                itemHeaders.setContentType(MediaType.APPLICATION_JSON);
+//
+//                HttpEntity<String> itemEntity = new HttpEntity<>(itemJson.toString(), itemHeaders);
+//
+//                String itemUrl = "http://localhost:8080/rest/items/" + itemName;
+//
+//                ResponseEntity<String> itemResponse;
+//                try {
+//                    itemResponse = restTemplate.exchange(itemUrl, HttpMethod.PUT, itemEntity, String.class);
+//                } catch (RestClientException e) {
+//                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                            .body(Collections.singletonMap("error", "Failed to create item: " + e.getMessage()));
+//                }
+//
+//                if (!itemResponse.getStatusCode().is2xxSuccessful()) {
+//                    return ResponseEntity.status(itemResponse.getStatusCode())
+//                            .body(Collections.singletonMap("error", "Failed to create item: " + itemResponse.getStatusCode() + " - " + itemResponse.getBody()));
+//                }
+//
+//                // Step 7: Link Channel to Item via PUT /rest/links/{itemName}/{channelUID}
+//                HttpHeaders linkHeaders = new HttpHeaders();
+//                linkHeaders.setBearerAuth(openHABToken);
+//                // Do NOT set Content-Type since the body is empty
+//
+//                HttpEntity<String> linkEntity = new HttpEntity<>(linkHeaders); // Empty body, no Content-Type
+//
+//                String linkUrl = "http://localhost:8080/rest/links/wiz_color_bulb_user003/" + channelUID;
+//
+//                ResponseEntity<String> linkResponse;
+//                try {
+//                    linkResponse = restTemplate.exchange(linkUrl, HttpMethod.PUT, linkEntity, String.class);
+//                } catch (RestClientException e) {
+//                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                            .body(Collections.singletonMap("error", "Failed to link item to channel: " + e.getMessage()));
+//                }
+//
+//                if (!linkResponse.getStatusCode().is2xxSuccessful()) {
+//                    return ResponseEntity.status(linkResponse.getStatusCode())
+//                            .body(Collections.singletonMap("error", "Failed to link item to channel: " + linkResponse.getStatusCode() + " - " + linkResponse.getBody()));
+//                }
+//
+//                linkedItems.add(itemName);
+//            }
+//
+//            return ResponseEntity.ok(Collections.singletonMap("linkedItems", linkedItems));
+//
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+//                    .body(Collections.singletonMap("error", "Something went wrong: " + e.getMessage()));
+//        }
+//    }
+
+    public ResponseEntity<?> addDeviceAndLinkItems(String token, ThingDTO thingRequest) {
         try {
+            // Step 1: JWT Validation
+            if (token == null || !token.startsWith("Bearer ")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Collections.singletonMap("error", "Authorization header missing"));
+            }
+
+            String jwtToken = token.substring(7);
             if (!jwtUtil.isTokenValid(jwtToken)) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Collections.singletonMap("error", "Invalid or expired token"));
             }
 
             String email = jwtUtil.extractEmail(jwtToken);
 
-            // Get user from Firebase
+            // Step 2: Firebase user lookup
             DatabaseReference userRef = FirebaseDatabase.getInstance().getReference(COLLECTION_NAME1);
             DataSnapshot userSnapshot = getSnapshotSync(userRef);
-            if (userSnapshot == null) return error("Firebase error while accessing user");
+            if (userSnapshot == null) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.singletonMap("error", "Firebase error while accessing user"));
+            }
 
             User user = findUserByEmail(userSnapshot, email);
-            if (user == null) return notFound("User not found");
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Collections.singletonMap("error", "User not found"));
+            }
 
-            // Fetch roomId based on roomName
-            if (thingRequest.getRoomName() != null && !thingRequest.getRoomName().isEmpty()) {
-                DatabaseReference roomRef = FirebaseDatabase.getInstance().getReference(COLLECTION_NAME2);
-                DataSnapshot roomSnapshot = getSnapshotSync(roomRef);
-                if (roomSnapshot == null) return error("Firebase error while accessing room");
-
-                String matchedRoomId = null;
-                for (DataSnapshot roomNode : roomSnapshot.getChildren()) {
-                    String roomName = roomNode.child("roomName").getValue(String.class);
-                    String ownerId = roomNode.child("userId").getValue(String.class);
-
-                    if (thingRequest.getRoomName().equalsIgnoreCase(roomName) &&
-                            user.getUserId().equals(ownerId)) {
-                        matchedRoomId = roomNode.child("roomId").getValue(String.class);
-                        break;
-                    }
-                }
-
-                if (matchedRoomId == null) {
-                    return notFound("Room not found for given name and user");
-                }
-
-                // Set roomId using the matched roomId
-                thingRequest.setRoomId(matchedRoomId);
-            } else {
+            // Step 3: Fetch roomId based on roomName
+            if (thingRequest.getRoomName() == null || thingRequest.getRoomName().isEmpty()) {
                 return ResponseEntity.badRequest().body(Collections.singletonMap("error", "roomName is required"));
             }
 
-            // Validate roomId after roomName lookup
+            DatabaseReference roomRef = FirebaseDatabase.getInstance().getReference(COLLECTION_NAME2);
+            DataSnapshot roomSnapshot = getSnapshotSync(roomRef);
+            if (roomSnapshot == null) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.singletonMap("error", "Firebase error while accessing room"));
+            }
+
+            String matchedRoomId = null;
+            for (DataSnapshot roomNode : roomSnapshot.getChildren()) {
+                String roomName = roomNode.child("roomName").getValue(String.class);
+                String ownerId = roomNode.child("userId").getValue(String.class);
+
+                if (thingRequest.getRoomName().equalsIgnoreCase(roomName) && user.getUserId().equals(ownerId)) {
+                    matchedRoomId = roomNode.child("roomId").getValue(String.class);
+                    break;
+                }
+            }
+
+            if (matchedRoomId == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Collections.singletonMap("error", "Room not found for given name and user"));
+            }
+
+            thingRequest.setRoomId(matchedRoomId);
+
+            // Step 4: Validate roomId
             if (thingRequest.getRoomId() == null || thingRequest.getRoomId().isEmpty()) {
                 return ResponseEntity.badRequest().body(Collections.singletonMap("error", "roomId is required"));
             }
 
-            // Get room by roomId
-            DatabaseReference roomRef = FirebaseDatabase.getInstance().getReference(COLLECTION_NAME2).child(thingRequest.getRoomId());
-            DataSnapshot roomSnapshot = getSnapshotSync(roomRef);
+            // Step 5: Get room by roomId
+            roomRef = FirebaseDatabase.getInstance().getReference(COLLECTION_NAME2).child(thingRequest.getRoomId());
+            roomSnapshot = getSnapshotSync(roomRef);
             if (roomSnapshot == null || !roomSnapshot.exists()) {
-                return notFound("Room not found");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Collections.singletonMap("error", "Room not found"));
             }
 
             String roomOwnerId = roomSnapshot.child("userId").getValue(String.class);
@@ -643,7 +1055,7 @@ public class UserService {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Collections.singletonMap("error", "User does not own the room"));
             }
 
-            // UID generation
+            // Step 6: UID generation
             String sanitizedUsername = user.getUserId().toLowerCase().replaceAll("[^a-z0-9_-]", "_");
             String sanitizedLabel = thingRequest.getLabel().toLowerCase().replaceAll("[^a-z0-9_-]", "_");
 
@@ -694,7 +1106,7 @@ public class UserService {
                     ObjectNode wizConfig = mapper.createObjectNode();
                     wizConfig.put("ipAddress", thingRequest.getHost());
                     wizConfig.put("pollingInterval", 60);
-                    wizConfig.put("macAddress", thingRequest.getMacAddress()); // Add macAddress here
+                    wizConfig.put("macAddress", thingRequest.getMacAddress());
                     rootNode.set("configuration", wizConfig);
                     break;
 
@@ -702,7 +1114,7 @@ public class UserService {
                     return ResponseEntity.badRequest().body(Collections.singletonMap("error", "Unsupported thing type"));
             }
 
-            // Compose OpenHAB JSON
+            // Step 7: Compose OpenHAB JSON
             rootNode.put("UID", generatedUID);
             rootNode.put("label", thingRequest.getLabel());
             rootNode.put("thingTypeUID", thingRequest.getThingTypeUID());
@@ -713,7 +1125,7 @@ public class UserService {
                 rootNode.set("configuration", mapper.createObjectNode());
             }
 
-            // Send to OpenHAB
+            // Step 8: Send to OpenHAB
             String openHABUrl = "http://localhost:8080/rest/things";
             String jsonPayload = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(rootNode);
 
@@ -725,36 +1137,123 @@ public class UserService {
             RestTemplate restTemplate = new RestTemplate();
             ResponseEntity<String> openHABResponse = restTemplate.postForEntity(openHABUrl, request, String.class);
 
-            if (openHABResponse.getStatusCode() == HttpStatus.CREATED) {
-                // Store device under room/{roomId}/devices/{thingUID}
-                DatabaseReference deviceRef = FirebaseDatabase.getInstance()
-                        .getReference("room")
-                        .child(thingRequest.getRoomId())
-                        .child("devices")
-                        .child(generatedUID);
-
-                Map<String, Object> deviceMap = new HashMap<>();
-                deviceMap.put("thingUID", generatedUID);
-                deviceMap.put("thingTypeUID", thingRequest.getThingTypeUID());
-                deviceMap.put("label", thingRequest.getLabel());
-                deviceMap.put("host", thingRequest.getHost());
-                deviceMap.put("userId", user.getUserId());
-                deviceMap.put("roomId", thingRequest.getRoomId());
-
-                deviceRef.setValueAsync(deviceMap);
-
-                return ResponseEntity.ok(Collections.singletonMap("message", "Device added successfully to OpenHAB and Firebase"));
-            } else {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body(Collections.singletonMap("error", "Failed to add device to OpenHAB"));
+            if (openHABResponse.getStatusCode() != HttpStatus.CREATED) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.singletonMap("error", "Failed to add device to OpenHAB"));
             }
 
+            // Step 9: Store device in Firebase
+            DatabaseReference deviceRef = FirebaseDatabase.getInstance().getReference("room").child(thingRequest.getRoomId()).child("devices").child(generatedUID);
+
+            Map<String, Object> deviceMap = new HashMap<>();
+            deviceMap.put("thingUID", generatedUID);
+            deviceMap.put("thingTypeUID", thingRequest.getThingTypeUID());
+            deviceMap.put("label", thingRequest.getLabel());
+            deviceMap.put("host", thingRequest.getHost());
+            deviceMap.put("userId", user.getUserId());
+            deviceMap.put("roomId", thingRequest.getRoomId());
+
+            deviceRef.setValueAsync(deviceMap);
+
+            // Step 10: Fetch Thing details (including channels) from OpenHAB
+            headers = new HttpHeaders();
+            headers.setBearerAuth(openHABToken);
+            headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+            String thingUrl = "http://localhost:8080/rest/things/" + generatedUID;
+
+            ResponseEntity<String> thingResponse;
+            try {
+                thingResponse = restTemplate.exchange(thingUrl, HttpMethod.GET, entity, String.class);
+            } catch (RestClientException e) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.singletonMap("error", "Failed to fetch thing info: " + e.getMessage()));
+            }
+
+            if (!thingResponse.getStatusCode().is2xxSuccessful()) {
+                return ResponseEntity.status(thingResponse.getStatusCode()).body(Collections.singletonMap("error", "Failed to fetch thing info: " + thingResponse.getStatusCode()));
+            }
+
+            JSONObject thingJson = new JSONObject(thingResponse.getBody());
+            JSONArray channelsArray = thingJson.getJSONArray("channels");
+
+            List<String> linkedItems = new ArrayList<>();
+
+            // Step 11: Process each channel
+            for (int i = 0; i < channelsArray.length(); i++) {
+                JSONObject channel = channelsArray.getJSONObject(i);
+                String channelUID = channel.getString("uid");
+                String channelId = channel.getString("id");
+                String itemType = channel.optString("itemType", null);
+
+                if (itemType == null || itemType.isEmpty()) {
+                    continue; // Skip if no itemType
+                }
+
+                // Step 12: Generate itemName
+                String itemName = (generatedUID + "_" + channelId).replaceAll("[:\\-]", "_");
+
+                // Step 13: Create Item via PUT /rest/items/{itemName}
+                JSONObject itemJson = new JSONObject();
+                itemJson.put("type", itemType);
+                itemJson.put("name", itemName);
+                itemJson.put("label", "Auto " + itemName);
+                itemJson.put("category", "Light");
+                itemJson.put("tags", new JSONArray());
+                itemJson.put("groupNames", new JSONArray());
+
+                HttpHeaders itemHeaders = new HttpHeaders();
+                itemHeaders.setBearerAuth(openHABToken);
+                itemHeaders.setContentType(MediaType.APPLICATION_JSON);
+
+                HttpEntity<String> itemEntity = new HttpEntity<>(itemJson.toString(), itemHeaders);
+
+                String itemUrl = "http://localhost:8080/rest/items/" + itemName;
+
+                ResponseEntity<String> itemResponse;
+                try {
+                    itemResponse = restTemplate.exchange(itemUrl, HttpMethod.PUT, itemEntity, String.class);
+                } catch (RestClientException e) {
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.singletonMap("error", "Failed to create item: " + e.getMessage()));
+                }
+
+                if (!itemResponse.getStatusCode().is2xxSuccessful()) {
+                    return ResponseEntity.status(itemResponse.getStatusCode()).body(Collections.singletonMap("error", "Failed to create item: " + itemResponse.getStatusCode() + " - " + itemResponse.getBody()));
+                }
+
+                // Step 14: Link Channel to Item via PUT /rest/links/{itemName}/{channelUID}
+                HttpHeaders linkHeaders = new HttpHeaders();
+                linkHeaders.setContentType(MediaType.APPLICATION_JSON);
+                linkHeaders.setBearerAuth(openHABToken);
+
+                // Use empty string as body
+                HttpEntity<String> linkEntity = new HttpEntity<>("", linkHeaders);
+
+
+                String linkUrl = "http://localhost:8080/rest/links/" + itemName + "/" + channelUID;
+
+                ResponseEntity<String> linkResponse;
+                try {
+                    linkResponse = restTemplate.exchange(linkUrl, HttpMethod.PUT, linkEntity, String.class);
+                } catch (RestClientException e) {
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.singletonMap("error", "Failed to link item to channel: " + e.getMessage()));
+                }
+
+                if (!linkResponse.getStatusCode().is2xxSuccessful()) {
+                    return ResponseEntity.status(linkResponse.getStatusCode()).body(Collections.singletonMap("error", "Failed to link item to channel: " + linkResponse.getStatusCode() + " - " + linkResponse.getBody()));
+                }
+
+                linkedItems.add(itemName);
+            }
+
+            // Step 15: Return success response
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Device added and controls created successfully");
+            response.put("thingUID", generatedUID);
+            response.put("linkedItems", linkedItems);
+            return ResponseEntity.ok(response);
+
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Collections.singletonMap("error", "Error: " + e.getMessage()));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.singletonMap("error", "Error: " + e.getMessage()));
         }
     }
-
-
-
 }

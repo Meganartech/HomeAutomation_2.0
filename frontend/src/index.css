@@ -5,6 +5,7 @@ input:-webkit-autofill {
     transition: background-color 5000s ease-in-out 0s;
 }
 
+
 .only-1440 {
     display: none;
 }
