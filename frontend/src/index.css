@@ -1,7 +1,24 @@
+input:-webkit-autofill {
+    background-color: #fff !important;
+    -webkit-box-shadow: 0 0 0 1000px #fff inset !important;
+    -webkit-text-fill-color: black !important;
+    transition: background-color 5000s ease-in-out 0s;
+}
+
+.only-1440 {
+    display: none;
+}
+
+@media (min-width: 1050px) {
+    .only-1440 {
+        display: block;
+    }
+}
+
 .form-control {
     /* border: 0px solid #ced4da !important;
      border-radius: 0px !important;*/
-    border: 1px solid #ced4da !important;  
+    border: 1px solid #ced4da !important;
 }
 
 .form-control:focus {
@@ -12,6 +29,14 @@
     color: #6c757d;
 }
 
+.text-1C1C1E {
+    color: #1C1C1E;
+}
+
+.text-eaeaea {
+    color: #eaeaea;
+}
+
 .bg-ffffff {
     background-color: #ffffff !important;
 }
@@ -20,12 +45,22 @@
     background-color: #eaeaea !important;
 }
 
-.bg-eceaea {
+/* .bg-eceaea {
     background-color: #eceaea !important;
-}
+} */
 
 .bg-1C1C1E {
     background-color: #1C1C1E !important;
+}
+
+.table-1C1C1E {
+    --bs-table-bg: #1C1C1E;
+    --bs-table-color: #fff;
+}
+
+.table-EAEAEA {
+    --bs-table-bg: #EAEAEA;
+    --bs-table-color: #1C1C1E;
 }
 
 .form-floating>label {
@@ -43,6 +78,11 @@
     padding-bottom: 1rem !important;
 }
 
+.my-6 {
+    margin-top: 72px;
+    margin-bottom: 72px;
+}
+
 .mt-7 {
     margin-top: 56px !important;
 }
@@ -52,7 +92,7 @@
 }
 
 .mt-13 {
-    margin-top: 104.5px !important;
+    margin-top: 109.5px !important;
 }
 
 .py-12px {
@@ -64,7 +104,7 @@
     border-radius: 20px !important
 }
 
-.border-white {
+.border-#fff {
     border-color: #ffffff !important;
 }
 
@@ -80,16 +120,28 @@
 
 .sidepanel-active {
     background-color: #eaeaea;
-    color: #1C1C1E;
+    color: #1C1C1E !important;
     border-radius: 5px;
 }
 
 .sidepanel-hover:hover {
     background-color: #eaeaea;
-    color: #1C1C1E;
+    color: #1C1C1E !important;
     border-radius: 5px;
     cursor: pointer;
 }
+
+.inside-sidepanel-active {
+    background-color: #eaeaea;
+    border-radius: 5px;
+}
+
+.inside-sidepanel-hover:hover {
+    background-color: #eaeaea;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
 
 @media (min-width: 1440px) {
     .min-height-660 {

@@ -1,16 +1,22 @@
-import React, { useState } from "react";
-import axios from "axios";
+import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import axios from "axios";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import AuthBackground from "../components/AuthBackground";
 
 export default function ResetPassword() {
+
     const [formData, setFormData] = useState({ newPassword: "", confirmPassword: "" });
     const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
     const location = useLocation();
     const { email } = location.state || {};
 
-    const togglePasswordVisibility = () => {
+    const resetForm = () => {
+        setFormData({ newPassword: "", confirmPassword: "" });
+    }
+
+    const toggle = () => {
         setShowPassword(!showPassword);
     };
 
@@ -27,56 +33,57 @@ export default function ResetPassword() {
         }
 
         try {
-            const response = await axios.put("http://localhost:8081/user/reset/password", {
-                email,
-                newPassword: formData.newPassword
-            });
-            if (response.status === 200) {
-                alert(response.data.message);
+            const { data, status } = await axios.put("http://localhost:8081/user/reset/password",
+                { email, newPassword: formData.newPassword }
+            );
+            if (status === 200) {
+                alert(data.message);
                 navigate("/login");
             }
         } catch (err) {
-            if (err.response?.data?.error) {
-                alert(`${err.response.data.error}`);
-                console.log(err.response.data.error);
+            if (err.data?.error) {
+                alert(`${err.data.error}`);
+                console.log(err.data.error);
             } else {
                 alert('Reset password failed due to server error.');
             }
+        } finally {
+            resetForm();
         }
     };
 
     return (
         <>
-            <div className="container-fluid d-flex justify-content-center align-items-center bg-eceaea" style={{ minHeight: "100vh" }}>
-                <div className="card shadow border-0 p-4 mx-auto" style={{ maxWidth: "450px", width: "100%", minHeight: "450px" }}>
-                    <h3 className="mb-3">Reset Password</h3>
-                    <p className="text-muted mb-3">Please enter your password and confirm the password.</p>
+            <AuthBackground>
 
-                    <form onSubmit={handleSubmit}>
-                        <div className="form-floating mb-3">
-                            <input type="password" name="newPassword" className="form-control mb-1" placeholder="" value={formData.newPassword} onChange={handleChange} required />
-                            <label className="text-6c757d">New Password</label>
+                <h3 className="mb-3">Reset Password</h3>
+
+                <p className="text-muted mb-3">Please enter your password and confirm the password.</p>
+
+                <form onSubmit={handleSubmit}>
+                    <div className="mb-3">
+                        <label className="text-6c757d">New Password</label>
+                        <input type="password" name="newPassword" className="form-control mb-1" placeholder="" value={formData.newPassword} onChange={handleChange} required />
+                    </div>
+
+                    <div className="mb-3 position-relative">
+                        <div className="">
+                            <label className="text-6c757d">Confirm Password</label>
+                            <input type={showPassword ? "text" : "password"} name="confirmPassword" className="form-control" placeholder="" value={formData.confirmPassword} onChange={handleChange} required />
                         </div>
+                        <span
+                            onClick={toggle}
+                            style={{ position: "absolute", right: "15px", top: "65%", transform: "translateY(-50%)", cursor: "pointer", color: "#6c757d" }}>
+                            {showPassword ? <FaEyeSlash /> : <FaEye />}
+                        </span>
+                    </div>
 
-                        <div className="mb-3 position-relative">
-                            <div className="form-floating">
-                                <input type={showPassword ? "text" : "password"} name="confirmPassword" className="form-control" placeholder="" value={formData.confirmPassword} onChange={handleChange} required />
-                                <label className="text-6c757d">Confirm Password</label>
-                            </div>
-                            <span
-                                onClick={togglePasswordVisibility}
-                                style={{ position: "absolute", right: "15px", top: "60%", transform: "translateY(-50%)", cursor: "pointer", color: "#6c757d" }}>
-                                {showPassword ? <FaEyeSlash /> : <FaEye />}
-                            </span>
-                        </div>
+                    <div className="mb-3">
+                        <button type="submit" className="btn btn-dark w-100">Save</button>
+                    </div>
+                </form>
 
-                        <div className="mt-7 mb-3">
-                            <button type="submit" className="btn btn-dark w-100">Save</button>
-                        </div>
-                    </form>
-
-                </div>
-            </div>
+            </AuthBackground>
         </>
     );
 };

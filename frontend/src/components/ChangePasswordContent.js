@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
@@ -6,7 +6,6 @@ import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 export default function ChangePasswordContent() {
     const [formData, setFormData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
-    const [editField, setEditField] = useState(null);
     const [showPassword, setShowPassword] = useState({
         currentPassword: false,
         newPassword: false,
@@ -22,9 +21,13 @@ export default function ChangePasswordContent() {
         { name: "confirmPassword", placeholder: "Confirm Password", label: "Confirm Password" }
     ];
 
-    const handleEditClick = (field) => {
-        setEditField(field);
-    };
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            navigate('/user/login');
+            return;
+        }
+    }, [navigate]);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -84,7 +87,7 @@ export default function ChangePasswordContent() {
             <form onSubmit={handleProfileSubmit}>
                 <div style={{ height: '300px', overflowY: 'auto' }}>
                     {formFields.map((ref, index) => (
-                        <div key={index} className="mb-4">
+                        <div key={index} className="mb-3">
                             <label className="form-label fw-bold">{ref.label}</label>
                             <div className="position-relative">
                                 <input
@@ -96,8 +99,6 @@ export default function ChangePasswordContent() {
                                     value={formData[ref.name]}
                                     onChange={handleChange}
                                     required
-                                    readOnly={editField !== ref.name}
-                                    onClick={() => handleEditClick(ref.name)}
                                 />
                                 <span
                                     onClick={() => togglePasswordVisibility(ref.name)}
