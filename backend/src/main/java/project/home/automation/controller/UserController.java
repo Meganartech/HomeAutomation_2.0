@@ -84,9 +84,23 @@ public class UserController {
         return userService.getInbox(token);
     }
 
-    @PostMapping("/thing")
-    public ResponseEntity<?> postThing(@RequestHeader("Authorization") String token, @RequestBody ThingDTO thingRequest) {
-        return userService.postThing(token, thingRequest);
-    }
+//    @PostMapping("/thing")
+//    public ResponseEntity<?> postThing(@RequestHeader("Authorization") String token, @RequestBody ThingDTO thingRequest) {
+//        return userService.postThing(token, thingRequest);
+//    }
 
+//    @GetMapping("/channels")
+//    public ResponseEntity<?> getChannel(@RequestHeader("Authorization") String token, @RequestParam String thingUID) {
+//        return userService.getChannel(token, thingUID);
+//    }
+
+//    @PostMapping("/test")
+//    public ResponseEntity<?> autoCreateAndLinkItems(@RequestHeader("Authorization") String token, @RequestParam String thingUID) {
+//        return userService.autoCreateAndLinkItems(token, thingUID);
+//    }
+
+    @PostMapping("/test")
+    public ResponseEntity<?> addDeviceAndLinkItems(@RequestHeader("Authorization") String token, @RequestBody ThingDTO thingRequest) {
+        return userService.addDeviceAndLinkItems(token, thingRequest);
+    }
 }
