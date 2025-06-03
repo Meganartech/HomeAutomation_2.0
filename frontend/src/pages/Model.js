@@ -257,3 +257,119 @@ export default function Profile() {
         </>
     );
 };
+
+
+// import { useState } from 'react';
+
+// export default function CreateScenesContent() {
+//     const [selectedDays, setSelectedDays] = useState([]);
+//     const [selectedAltDays, setSelectedAltDays] = useState([]);
+//     const [device, setDevice] = useState('');
+//     const [room, setRoom] = useState('');
+//     const [condition, setCondition] = useState('On');
+
+//     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+//     const toggleDay = (day, alt = false) => {
+//         const state = alt ? selectedAltDays : selectedDays;
+//         const setState = alt ? setSelectedAltDays : setSelectedDays;
+//         setState(
+//             state.includes(day) ? state.filter(d => d !== day) : [...state, day]
+//         );
+//     };
+//     return (
+//         <>
+//             <div className='container px-5 py-4'>
+//                 <div style={{ fontSize: '24px', lineHeight: '100%', letterSpacing: '0' }} className='mb-3'>Create Scenes</div>
+
+               
+//                 <div className="mb-3">
+//                     <label className="form-label">Time</label>
+//                     <div className="d-flex gap-2">
+//                         <input type="time" className="form-control" />
+//                         <span className="align-self-center">To</span>
+//                         <input type="time" className="form-control" />
+//                     </div>
+//                 </div>
+
+            
+//                 <div className="mb-3">
+//                     <label className="form-label">Day</label>
+//                     <div className="d-flex flex-wrap gap-2 mb-2">
+//                         {days.map(day => (
+//                             <button
+//                                 key={day}
+//                                 className={`btn rounded-circle ${selectedDays.includes(day) ? 'btn-dark text-white' : 'btn-light'
+//                                     }`}
+//                                 onClick={() => toggleDay(day)}
+//                                 style={{ width: '40px', height: '40px' }}
+//                             >
+//                                 {day}
+//                             </button>
+//                         ))}
+//                         <span className="align-self-center px-2">|</span>
+//                         {days.map(day => (
+//                             <button
+//                                 key={day + 'alt'}
+//                                 className={`btn rounded-circle ${selectedAltDays.includes(day)
+//                                     ? 'btn-dark text-white'
+//                                     : 'btn-light'
+//                                     }`}
+//                                 onClick={() => toggleDay(day, true)}
+//                                 style={{ width: '40px', height: '40px' }}
+//                             >
+//                                 {day}
+//                             </button>
+//                         ))}
+//                     </div>
+//                 </div>
+
+              
+//                 <div className="mb-3">
+//                     <label className="form-label">Devices</label>
+//                     <select
+//                         className="form-select"
+//                         value={device}
+//                         onChange={e => setDevice(e.target.value)}
+//                     >
+//                         <option value="">Select Device</option>
+//                         <option value="Smart Bulb">Smart Bulb</option>
+//                     </select>
+//                 </div>
+
+         
+//                 <div className="mb-3">
+//                     <label className="form-label">Rooms</label>
+//                     <select
+//                         className="form-select"
+//                         value={room}
+//                         onChange={e => setRoom(e.target.value)}
+//                     >
+//                         <option value="">Select Room</option>
+//                         <option value="Living room">Living room</option>
+//                     </select>
+//                 </div>
+
+//                 <div className="mb-3">
+//                     <label className="form-label">Condition</label>
+//                     <div className="btn-group w-100" role="group">
+//                         <button
+//                             type="button"
+//                             className={`btn ${condition === 'On' ? 'btn-dark' : 'btn-light'}`}
+//                             onClick={() => setCondition('On')}
+//                         >
+//                             On
+//                         </button>
+//                         <button
+//                             type="button"
+//                             className={`btn ${condition === 'Off' ? 'btn-dark' : 'btn-light'}`}
+//                             onClick={() => setCondition('Off')}
+//                         >
+//                             Off
+//                         </button>
+//                     </div>
+//                 </div>
+//             </div>
+//         </>
+//     );
+// };

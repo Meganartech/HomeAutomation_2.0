@@ -16,12 +16,14 @@ input:-webkit-autofill {
     }
 }
 
-.form-control {
+.form-control,
+.form-select {
     /* border: 0px solid #ced4da !important;
      border-radius: 0px !important;*/
     border: 1px solid #ced4da !important;
 }
 
+.form-select:focus,
 .form-control:focus {
     box-shadow: none !important;
 }
@@ -62,6 +64,28 @@ input:-webkit-autofill {
 .table-EAEAEA {
     --bs-table-bg: #EAEAEA;
     --bs-table-color: #1C1C1E;
+}
+
+.alert-eaeaea {
+    color: #1f1f1f;
+    background-color: #eaeaea;
+    border-color: #eaeaea;
+}
+
+.btn-outline-eaeaea {
+    color: #1f1f1f;
+    border-color: #1f1f1f
+}
+
+.btn-outline-eaeaea:hover {
+    color: #1f1f1f;
+    background-color: #eaeaea;
+    border-color: #1f1f1f
+}
+
+.btn-check:focus+.btn-outline-eaeaea,
+.btn-outline-eaeaea:focus {
+    box-shadow: none !important;
 }
 
 .form-floating>label {
@@ -143,6 +167,25 @@ input:-webkit-autofill {
     cursor: pointer;
 }
 
+.form-switch .form-check-input {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%231f1f1f'/%3e%3c/svg%3e");
+}
+
+.form-switch .form-check-input:focus {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%231f1f1f'/%3e%3c/svg%3e");
+    border: none;
+    box-shadow: none;
+}
+
+.form-switch .form-check-input:checked {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e");
+    background-color: #1f1f1f !important;
+}
+
+.form-switch .form-check-input:checked {
+    background-color: #1f1f1f !important;
+    border-color: #1f1f1f !important;
+}
 
 @media (min-width: 1440px) {
     .min-height-660 {
