@@ -7,19 +7,36 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.List;
-import java.util.Map;
 
 @Entity
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class Room {
+public class Scenes {
     @Id
-    private String roomId;
+    private String scenesId;
 
     @Column(nullable = false)
-    private String roomPath;
+    private String scenesName;
+
+    @Column(nullable = false)
+    private String fromTime;
+
+    @Column(nullable = false)
+    private String toTime;
+
+    @ElementCollection
+    private List<String> days;
+
+    @Column(nullable = false)
+    private String command;
+
+    @Column(nullable = false)
+    private String deviceId;
+
+    @Column(nullable = false)
+    private String roomId;
 
     @Column(nullable = false)
     private String roomName;
@@ -27,7 +44,4 @@ public class Room {
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
-
-    @OneToMany(mappedBy = "room", cascade = CascadeType.ALL)
-    private List<Device> devices;
 }

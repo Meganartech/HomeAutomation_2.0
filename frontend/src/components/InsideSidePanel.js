@@ -1,17 +1,23 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { clearUserData } from '../redux/slice';
+import ModalLayout from '../components/layout/ModalLayout'
 import "@fontsource/roboto/300.css";
 import '@fontsource/roboto/400.css';
 
 export default function InsideSidePanel({ menu, activePage, activeState }) {
     const [showLogoutModal, setShowLogoutModal] = useState(false);
     const navigate = useNavigate();
+    const dispatch = useDispatch();
 
     const handleLogout = () => {
+        dispatch(clearUserData());
         localStorage.removeItem('token');
         localStorage.removeItem('role');
-        localStorage.removeItem('user');
-        navigate('/user/login');
+        localStorage.removeItem('name');
+        localStorage.removeItem('userId');
+        navigate('/');
         setShowLogoutModal(false);
     };
 
@@ -58,30 +64,13 @@ export default function InsideSidePanel({ menu, activePage, activeState }) {
             </div>
 
             {showLogoutModal && (
-                <div style={{
-                    position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-                    backgroundColor: "rgba(0,0,0,0.5)", display: "flex",
-                    alignItems: "center", justifyContent: "center", zIndex: 1050
-                }}>
-                    <div style={{
-                        backgroundColor: "#fff", borderRadius: "20px", width: "100%",
-                        maxWidth: "440px", boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
-                        padding: "24px", position: "relative", textAlign: "center"
-                    }}>
-                        <button onClick={() => setShowLogoutModal(false)} style={{
-                            position: "absolute", top: "8px", right: "12px",
-                            background: 'none', fontSize: '24px', cursor: "pointer"
-                        }} className='border-0'>&times;</button>
-
-                        <div style={{ fontWeight: 600, fontSize: '24px' }} className='mb-3'>Logout</div>
-                        <div style={{ color: "#6c757d", fontSize: '16px' }} className='mb-5'>Do you really want to logout ?</div>
-
-                        <div className="d-flex justify-content-around">
-                            <button onClick={() => setShowLogoutModal(false)} className='btn btn-outline-dark px-5'>Cancel</button>
-                            <button onClick={handleLogout} className='btn btn-dark px-5'>Logout</button>
-                        </div>
+                <ModalLayout title={'Logout'} msg={<span>Are you sure want to <strong>Logout</strong>?</span>}
+                    modal={() => setShowLogoutModal(false)} >
+                    <div className="d-flex justify-content-around">
+                        <button onClick={() => setShowLogoutModal(false)} className='btn btn-outline-eaeaea px-5'>Cancel</button>
+                        <button onClick={handleLogout} className='btn btn-dark px-5'>Logout</button>
                     </div>
-                </div>
+                </ModalLayout>
             )}
         </>
     );
