@@ -7,8 +7,6 @@ import { clearUserData } from '../redux/slice';
 import ModalLayout from '../components/layout/ModalLayout';
 import '@fontsource/roboto/300.css';
 
-const customStyle = { fontFamily: 'roboto', fontWeight: '300', lineHeight: '100%', letterSpacing: '0' };
-
 function getGreeting(hour) {
     if (hour >= 5 && hour < 12) return 'Good Morning';
     if (hour >= 12 && hour < 17) return 'Good Afternoon';
@@ -16,9 +14,11 @@ function getGreeting(hour) {
     return 'Good Night';
 }
 
+const customStyle = { fontFamily: 'roboto', fontWeight: '300', lineHeight: '100%', letterSpacing: '0' };
+
 export default function Navbar() {
-    const [showLogoutModal, setShowLogoutModal] = useState(false);
     const [greeting, setGreeting] = useState(getGreeting(new Date().getHours()));
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
     const navigate = useNavigate();
 
     const dispatch = useDispatch();
@@ -29,7 +29,6 @@ export default function Navbar() {
             const newGreeting = getGreeting(new Date().getHours());
             setGreeting(newGreeting);
         }, 60000);
-
         return () => clearInterval(interval);
     }, []);
 
@@ -64,7 +63,8 @@ export default function Navbar() {
             </div>
 
             {showLogoutModal && (
-                <ModalLayout title="Logout" msg="Are you sure want to logout?" modal={setShowLogoutModal}>
+                <ModalLayout title={'Logout'} msg={<span>Are you sure want to Logout ?</span>}
+                    modal={() => setShowLogoutModal(false)} >
                     <div className="d-flex justify-content-around">
                         <button onClick={() => setShowLogoutModal(false)} className='btn btn-outline-eaeaea px-5'>Cancel</button>
                         <button onClick={handleLogout} className='btn btn-dark px-5'>Logout</button>

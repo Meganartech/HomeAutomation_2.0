@@ -13,7 +13,7 @@
 //import org.springframework.web.client.RestClientException;
 //import org.springframework.web.client.RestTemplate;
 //import project.home.automation.dto.*;
-//import project.home.automation.entity.Room;
+//import project.home.automation.entity.Rooms;
 //import project.home.automation.entity.User;
 //import project.home.automation.security.JwtUtil;
 //
@@ -27,12 +27,12 @@
 //    private static final String COLLECTION_NAME2 = "room";
 //    private final JwtUtil jwtUtil;
 //    private final PasswordEncoder passwordEncoder;
-//    private final OtpService otpService;
+//    private final MailService otpService;
 //
 //    @Value("${openhab.token}")
 //    private String openHABToken;
 //
-//    public UserService(JwtUtil jwtUtil, OtpService otpService, PasswordEncoder passwordEncoder) {
+//    public UserService(JwtUtil jwtUtil, MailService otpService, PasswordEncoder passwordEncoder) {
 //        this.jwtUtil = jwtUtil;
 //        this.otpService = otpService;
 //        this.passwordEncoder = passwordEncoder;
@@ -111,7 +111,7 @@
 //    private String generateRoomId(DataSnapshot snapshot) {
 //        int maxId = 0;
 //        for (DataSnapshot roomSnapshot : snapshot.getChildren()) {
-//            Room roomRef = roomSnapshot.getValue(Room.class);
+//            Rooms roomRef = roomSnapshot.getValue(Rooms.class);
 //            if (roomRef != null && roomRef.getRoomId() != null && roomRef.getRoomId().startsWith("room")) {
 //                try {
 //                    int id = Integer.parseInt(roomRef.getRoomId().replace("room", ""));
@@ -175,7 +175,7 @@
 //        }
 //    }
 //
-//    public ResponseEntity<?> postEmail(OtpDTO emailRequest) {
+//    public ResponseEntity<?> postEmail(MailDTO emailRequest) {
 //        try {
 //            DatabaseReference ref = FirebaseDatabase.getInstance().getReference(COLLECTION_NAME1);
 //            DataSnapshot snapshot = getSnapshotSync(ref);
@@ -192,7 +192,7 @@
 //        }
 //    }
 //
-//    public ResponseEntity<?> postOtp(OtpDTO otpRequest) {
+//    public ResponseEntity<?> postOtp(MailDTO otpRequest) {
 //        try {
 //            boolean isValid = otpService.isOtpValid(otpRequest.getEmail(), otpRequest.getOtp());
 //            if (!isValid) {
@@ -204,7 +204,7 @@
 //        }
 //    }
 //
-//    public ResponseEntity<?> putPassword(OtpDTO request) {
+//    public ResponseEntity<?> putPassword(MailDTO request) {
 //        try {
 //            DatabaseReference ref = FirebaseDatabase.getInstance().getReference(COLLECTION_NAME1);
 //            DataSnapshot snapshot = getSnapshotSync(ref);
@@ -285,7 +285,7 @@
 //        }
 //    }
 //
-//    public ResponseEntity<?> postPasswordAndGetOtp(String token, OtpDTO otpRequest) {
+//    public ResponseEntity<?> postPasswordAndGetOtp(String token, MailDTO otpRequest) {
 //        try {
 //            if (token == null || !token.startsWith("Bearer ")) {
 //                return unauthorized("Missing token or bearer");
@@ -360,7 +360,7 @@
 //        }
 //    }
 //
-//    public ResponseEntity<?> postRoom(String token, RoomDTO registerRequest) {
+//    public ResponseEntity<?> postRoom(String token, RoomsDTO registerRequest) {
 //        try {
 //            if (token == null || !token.startsWith("Bearer ")) {
 //                return unauthorized("Missing token or bearer");
@@ -388,11 +388,11 @@
 //            int userRoomCount = 0;
 //            if (roomSnapshot != null) {
 //                for (DataSnapshot snap : roomSnapshot.getChildren()) {
-//                    Room existingRoom = snap.getValue(Room.class);
+//                    Rooms existingRoom = snap.getValue(Rooms.class);
 //                    if (existingRoom != null && existingRoom.getUserId().equals(userId)) {
 //                        userRoomCount++;
 //                        if (existingRoom.getRoomName().equalsIgnoreCase(registerRequest.getRoomName())) {
-//                            return conflict("Room already exists for this user");
+//                            return conflict("Rooms already exists for this user");
 //                        }
 //                    }
 //                }
@@ -404,21 +404,21 @@
 //
 //            assert roomSnapshot != null;
 //            String newRoomId = generateRoomId(roomSnapshot);
-//            Room obj = new Room();
+//            Rooms obj = new Rooms();
 //            obj.setRoomId(newRoomId);
 //            obj.setRoomName(registerRequest.getRoomName());
 //            obj.setUserId(userId);
 //
 //            roomRef.child(newRoomId).setValueAsync(obj);
 //
-//            return ok("Room added successfully");
+//            return ok("Rooms added successfully");
 //
 //        } catch (Exception e) {
 //            return error("Something went wrong: " + e.getMessage());
 //        }
 //    }
 //
-//    public ResponseEntity<?> getRoom(String token) {
+//    public ResponseEntity<?> getRooms(String token) {
 //        try {
 //            if (token == null || !token.startsWith("Bearer ")) {
 //                return unauthorized("Missing token or bearer");
@@ -445,9 +445,9 @@
 //            DataSnapshot roomSnapshot = getSnapshotSync(roomRef);
 //            if (roomSnapshot == null) return error("Firebase error while accessing room");
 //
-//            List<Room> userRooms = new ArrayList<>();
+//            List<Rooms> userRooms = new ArrayList<>();
 //            for (DataSnapshot snap : roomSnapshot.getChildren()) {
-//                Room room = snap.getValue(Room.class);
+//                Rooms room = snap.getValue(Rooms.class);
 //                if (room != null && room.getUserId().equals(userId)) {
 //                    userRooms.add(room);
 //                }
@@ -491,7 +491,7 @@
 //            boolean roomFound = false;
 //
 //            for (DataSnapshot snap : roomSnapshot.getChildren()) {
-//                Room room = snap.getValue(Room.class);
+//                Rooms room = snap.getValue(Rooms.class);
 //                if (room != null && room.getRoomId().equals(roomId) && room.getUserId().equals(userId)) {
 //                    // User owns the room, delete it
 //                    roomRef.child(roomId).removeValueAsync();
@@ -501,10 +501,10 @@
 //            }
 //
 //            if (!roomFound) {
-//                return notFound("Room not found or does not belong to user");
+//                return notFound("Rooms not found or does not belong to user");
 //            }
 //
-//            return ok("Room deleted successfully");
+//            return ok("Rooms deleted successfully");
 //
 //        } catch (Exception e) {
 //            return error("Something went wrong: " + e.getMessage());
@@ -762,7 +762,7 @@
 //    }
 //
 //
-//    public ResponseEntity<?> postThing(String token, ThingDTO thingRequest) {
+//    public ResponseEntity<?> postThing(String token, ThingsDTO thingRequest) {
 //        if (token == null || !token.startsWith("Bearer ")) {
 //            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Collections.singletonMap("error", "Authorization header missing"));
 //        }
@@ -803,7 +803,7 @@
 //                }
 //
 //                if (matchedRoomId == null) {
-//                    return notFound("Room not found for given name and user");
+//                    return notFound("Rooms not found for given name and user");
 //                }
 //
 //                // Set roomId using the matched roomId
@@ -821,7 +821,7 @@
 //            DatabaseReference roomRef = FirebaseDatabase.getInstance().getReference(COLLECTION_NAME2).child(thingRequest.getRoomId());
 //            DataSnapshot roomSnapshot = getSnapshotSync(roomRef);
 //            if (roomSnapshot == null || !roomSnapshot.exists()) {
-//                return notFound("Room not found");
+//                return notFound("Rooms not found");
 //            }
 //
 //            String roomOwnerId = roomSnapshot.child("userId").getValue(String.class);
@@ -929,7 +929,7 @@
 //
 //                deviceRef.setValueAsync(deviceMap);
 //
-//                return ResponseEntity.ok(Collections.singletonMap("message", "Device added successfully to OpenHAB and Firebase"));
+//                return ResponseEntity.ok(Collections.singletonMap("message", "Things added successfully to OpenHAB and Firebase"));
 //            } else {
 //                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
 //                        .body(Collections.singletonMap("error", "Failed to add device to OpenHAB"));
@@ -1272,7 +1272,7 @@
 //    }
 //
 //
-//    public ResponseEntity<?> addDeviceAndLinkItems(String token, ThingDTO thingRequest) {
+//    public ResponseEntity<?> addDeviceAndLinkItems(String token, ThingsDTO thingRequest) {
 //        try {
 //            // Step 1: JWT Validation
 //            if (token == null || !token.startsWith("Bearer ")) {
@@ -1321,7 +1321,7 @@
 //            }
 //
 //            if (matchedRoomId == null) {
-//                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Collections.singletonMap("error", "Room not found for given name and user"));
+//                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Collections.singletonMap("error", "Rooms not found for given name and user"));
 //            }
 //
 //            thingRequest.setRoomId(matchedRoomId);
@@ -1335,7 +1335,7 @@
 //            roomRef = FirebaseDatabase.getInstance().getReference(COLLECTION_NAME2).child(thingRequest.getRoomId());
 //            roomSnapshot = getSnapshotSync(roomRef);
 //            if (roomSnapshot == null || !roomSnapshot.exists()) {
-//                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Collections.singletonMap("error", "Room not found"));
+//                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Collections.singletonMap("error", "Rooms not found"));
 //            }
 //
 //            String roomOwnerId = roomSnapshot.child("userId").getValue(String.class);
@@ -1535,7 +1535,7 @@
 //
 //            // Step 15: Return success response
 //            Map<String, Object> response = new HashMap<>();
-//            response.put("message", "Device added and controls created successfully");
+//            response.put("message", "Things added and controls created successfully");
 //            response.put("thingUID", generatedUID);
 //            response.put("linkedItems", linkedItems);
 //            return ResponseEntity.ok(response);

@@ -1,4 +1,4 @@
-export default function ModalLayout({ title, msg, modal, children }) {
+export default function ModalLayout({ title, msg, modal, children, hideClose = false }) {
     return (
         <>
             <div style={{
@@ -12,11 +12,13 @@ export default function ModalLayout({ title, msg, modal, children }) {
                     boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
                     padding: '24px', position: 'relative', textAlign: 'center'
                 }}>
-                    <button onClick={modal} style={{
-                        position: 'absolute', top: '8px', right: '12px',
-                        background: 'none', fontSize: '24px', cursor: 'pointer'
-                    }} className='border-0'>&times;</button>
-
+                    {!hideClose && (
+                        <button onClick={modal} style={{
+                            position: 'absolute', top: '8px', right: '12px',
+                            background: 'none', fontSize: '24px', cursor: 'pointer'
+                        }} className='border-0'>&times;</button>
+                    )}
+                    
                     <div style={{ fontWeight: 600, fontSize: '24px' }} className='mb-3'>{title}</div>
 
                     {msg && (

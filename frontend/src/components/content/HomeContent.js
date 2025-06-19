@@ -1,8 +1,8 @@
-import axios from 'axios';
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { FaLightbulb } from 'react-icons/fa';
+import axios from 'axios';
 
 export default function HomePage() {
     const [devices, setDevices] = useState([]);
@@ -14,13 +14,13 @@ export default function HomePage() {
 
     const token = localStorage.getItem('token');
 
-    const fetchDevices = useCallback(async () => {
+    const fetchDevice = useCallback(async () => {
         if (!token) {
             navigate('/');
             return;
         }
         try {
-            const { data, status } = await axios.get('http://localhost:8081/user/device',
+            const { data, status } = await axios.get(`${process.env.REACT_APP_API_URL}/user/thing`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             if (status === 200) {
@@ -32,8 +32,8 @@ export default function HomePage() {
                         uniqueRooms.push({ id: thingsObj.roomId, roomName: thingsObj.roomName });
                     }
                     return {
+                        label: thingsObj.label,
                         itemName: mainItem?.name,
-                        deviceName: thingsObj.label,
                         roomName: thingsObj.roomName,
                         status: mainItem?.state === 'ON' || mainItem?.state !== '0,0,0'
                     };
@@ -42,20 +42,20 @@ export default function HomePage() {
                 setRooms(uniqueRooms);
             }
         } catch (err) {
-            const error = err.response?.data?.error || 'Error fetching devices';
-            console.error('Error fetching devices:', error);
             setDevices([]);
             setRooms([]);
+            const errorMessage = err.response?.data?.error || 'Failed to fetch device';
+            console.error('Error fetching devices:', errorMessage);
         }
     }, [token, navigate]);
 
     useEffect(() => {
-        fetchDevices();
+        fetchDevice();
         const intervalId = setInterval(() => {
-            fetchDevices();
+            fetchDevice();
         }, 3000);
         return () => clearInterval(intervalId);
-    }, [fetchDevices]);
+    }, [fetchDevice]);
 
     const handleRoomChange = (e) => {
         setSelectedRoom(e.target.value);
@@ -79,11 +79,11 @@ export default function HomePage() {
                     <div style={{ fontSize: '18px', fontWeight: '600', lineHeight: '100%', letterSpacing: '0%' }}>{userData.fullName}'s Home</div>
                     {filteredDevices.length !== 0 && (
                         <select className="form-select w-auto" onChange={handleRoomChange} value={selectedRoom || ''}>
-                            {rooms.map(room => (
-                                <>
+                            {rooms.map((roomObj, index) => (
+                                <React.Fragment key={index}>
                                     <option value="">All Rooms</option>
-                                    <option key={room.roomId} value={room.roomId}>{room.roomName}</option>
-                                </>
+                                    <option value={roomObj.roomId}>{roomObj.roomName}</option>
+                                </React.Fragment>
                             ))}
                         </select>
                     )}
@@ -105,13 +105,10 @@ export default function HomePage() {
                                         <div className="form-check form-switch">
                                             <input className="form-check-input" type="checkbox" checked={isActive}
                                                 onChange={() =>
-                                                    axios.post('http://localhost:8081/user/control', {
-                                                        itemName: filterDevicesObj.itemName,
-                                                        command: isActive ? 'OFF' : 'ON'
-                                                    }, {
-                                                        headers: { Authorization: `Bearer ${token}` }
-                                                    }).then(fetchDevices)
-                                                }
+                                                    axios.post(`${process.env.REACT_APP_API_URL}/user/control`,
+                                                        { itemName: filterDevicesObj.itemName, command: isActive ? 'OFF' : 'ON' },
+                                                        { headers: { Authorization: `Bearer ${token}` } }
+                                                    ).then(fetchDevice)}
                                             />
                                         </div>
                                     </div>
@@ -121,7 +118,7 @@ export default function HomePage() {
                                     </div>
 
                                     <div className={`mb-3 ${isActive ? 'text-dark' : 'text-muted'}`}>
-                                        {filterDevicesObj.deviceName}
+                                        {filterDevicesObj.label}
                                     </div>
                                 </div>
                             </div>

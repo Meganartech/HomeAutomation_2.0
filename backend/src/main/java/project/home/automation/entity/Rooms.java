@@ -6,33 +6,27 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 @Entity
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class Device {
+public class Rooms {
     @Id
-    private String deviceId;
-
-    @Column(nullable = false, unique = true)
-    private String thingUID;
+    private String roomId;
 
     @Column(nullable = false)
-    private String thingTypeUID;
+    private String roomPath;
 
     @Column(nullable = false)
-    private String label;
-
-    private String host;
-
-    private String macAddress;
+    private String roomName;
 
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
 
-    @ManyToOne
-    @JoinColumn(name = "room_id")
-    private Room room;
+    @OneToMany(mappedBy = "rooms", cascade = CascadeType.ALL)
+    private List<Things> things;
 }

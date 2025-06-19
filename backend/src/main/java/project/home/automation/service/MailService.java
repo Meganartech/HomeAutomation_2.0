@@ -13,11 +13,11 @@ import java.util.Map;
 import java.util.Random;
 
 @Service
-public class OtpService {
+public class MailService {
 
     private final JavaMailSender mailSender;
 
-    public OtpService(JavaMailSender mailSender) {
+    public MailService(JavaMailSender mailSender) {
         this.mailSender = mailSender;
     }
 

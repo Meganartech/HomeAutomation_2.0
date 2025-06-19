@@ -12,16 +12,17 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import project.home.automation.dto.*;
-import project.home.automation.entity.Device;
-import project.home.automation.entity.Room;
-import project.home.automation.entity.Scenes;
+import project.home.automation.entity.Rooms;
+import project.home.automation.entity.Things;
+import project.home.automation.entity.Rules;
 import project.home.automation.entity.User;
-import project.home.automation.repository.DeviceRepository;
-import project.home.automation.repository.RoomRepository;
-import project.home.automation.repository.ScenesRepository;
+import project.home.automation.repository.ThingsRepository;
+import project.home.automation.repository.RoomsRepository;
+import project.home.automation.repository.RulesRepository;
 import project.home.automation.repository.UserRepository;
 import project.home.automation.security.JwtUtil;
 
@@ -37,22 +38,22 @@ public class UserService1 {
     private final JwtUtil jwtUtil;
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
-    private final RoomRepository roomRepository;
-    private final DeviceRepository deviceRepository;
-    private final ScenesRepository scenesRepository;
-    private final OtpService otpService;
+    private final RoomsRepository roomsRepository;
+    private final ThingsRepository thingsRepository;
+    private final RulesRepository rulesRepository;
+    private final MailService mailService;
 
     @Value("${openhab.token}")
     private String openHABToken;
 
-    public UserService1(AuthenticationManager authenticationManager, JwtUtil jwtUtil, UserRepository userRepository, RoomRepository roomRepository, DeviceRepository deviceRepository, ScenesRepository scenesRepository, OtpService otpService, PasswordEncoder passwordEncoder) {
+    public UserService1(AuthenticationManager authenticationManager, JwtUtil jwtUtil, UserRepository userRepository, RoomsRepository roomsRepository, ThingsRepository thingsRepository, RulesRepository rulesRepository, MailService mailService, PasswordEncoder passwordEncoder) {
         this.authenticationManager = authenticationManager;
         this.jwtUtil = jwtUtil;
         this.userRepository = userRepository;
-        this.roomRepository = roomRepository;
-        this.deviceRepository = deviceRepository;
-        this.scenesRepository = scenesRepository;
-        this.otpService = otpService;
+        this.roomsRepository = roomsRepository;
+        this.thingsRepository = thingsRepository;
+        this.rulesRepository = rulesRepository;
+        this.mailService = mailService;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -102,54 +103,54 @@ public class UserService1 {
         int nextId = 1;
         if (lastUser != null) {
             String lastId = lastUser.getUserId();
-            String numberPart = lastId.replace("user", "");
+            String numberPart = lastId.replace("USER", "");
             nextId = Integer.parseInt(numberPart) + 1;
         }
-        return String.format("user%03d", nextId);
+        return String.format("USER%03d", nextId);
     }
 
     // Customized room id
     public String generateRoomId() {
         // Get the last room
-        Room lastRoom = roomRepository.findTopByOrderByRoomIdDesc();
+        Rooms lastRooms = roomsRepository.findTopByOrderByRoomIdDesc();
         int nextId = 1;
-        if (lastRoom != null) {
-            String lastId = lastRoom.getRoomId();
-            String numberPart = lastId.replace("room", "");
+        if (lastRooms != null) {
+            String lastId = lastRooms.getRoomId();
+            String numberPart = lastId.replace("ROOM", "");
             nextId = Integer.parseInt(numberPart) + 1;
         }
-        return String.format("room%03d", nextId);
+        return String.format("ROOM%03d", nextId);
     }
 
-    // Room path
+    // Rooms path
     public String roomPath(String roomName) {
         return roomName.trim().toLowerCase().replaceAll("[^a-z0-9]+", "_");
     }
 
-    // Customized device id
-    public String generateDeviceId() {
-        // Get the last device
-        Device lastDevice = deviceRepository.findTopByOrderByDeviceIdDesc();
+    // Customized thing id
+    public String generateThingId() {
+        // Get the last thing
+        Things lastThings = thingsRepository.findTopByOrderByThingIdDesc();
         int nextId = 1;
-        if (lastDevice != null) {
-            String lastId = lastDevice.getDeviceId();
-            String numberPart = lastId.replace("device", "");
+        if (lastThings != null) {
+            String lastId = lastThings.getThingId();
+            String numberPart = lastId.replace("THING", "");
             nextId = Integer.parseInt(numberPart) + 1;
         }
-        return String.format("device%03d", nextId);
+        return String.format("THING%03d", nextId);
     }
 
-    // Customized scenes id
-    public String generateScenesId() {
-        // Get the last scenes
-        Scenes lastScenes = scenesRepository.findTopByOrderByScenesIdDesc();
+    // Customized rule id
+    public String generateRuleId() {
+        // Get the last rule
+        Rules lastRules = rulesRepository.findTopByOrderByRuleIdDesc();
         int nextId = 1;
-        if (lastScenes != null) {
-            String lastId = lastScenes.getScenesId();
-            String numberPart = lastId.replace("scenes", "");
+        if (lastRules != null) {
+            String lastId = lastRules.getRuleId();
+            String numberPart = lastId.replace("RULE", "");
             nextId = Integer.parseInt(numberPart) + 1;
         }
-        return String.format("scenes%03d", nextId);
+        return String.format("RULE%03d", nextId);
     }
 
     // Post register
@@ -161,7 +162,7 @@ public class UserService1 {
                 User newUser = new User();
                 newUser.setUserId(generateUserId());
                 newUser.setName(postRequest.getName().trim());
-                newUser.setMobileNumber(postRequest.getMobileNumber().trim());
+                newUser.setContactNumber(postRequest.getContactNumber().trim());
                 newUser.setEmail(postRequest.getEmail().trim().toLowerCase());
                 newUser.setPassword(passwordEncoder.encode(postRequest.getPassword()));
                 newUser.setRole(newUser.getRole());
@@ -202,13 +203,13 @@ public class UserService1 {
     }
 
     // Post email
-    public ResponseEntity<?> postEmail(OtpDTO postRequest) {
+    public ResponseEntity<?> postEmail_1(MailDTO postRequest) {
         try {
             // Fetch user to check email is correct
             if (userRepository.findByEmail(postRequest.getEmail()).isEmpty()) {
                 return unauthorized("Email not found");
             } else {
-                otpService.sendOtp(postRequest.getEmail());
+                mailService.sendOtp(postRequest.getEmail());
                 return ok("OTP sent to your registered email");
             }
         } catch (Exception e) {
@@ -216,10 +217,24 @@ public class UserService1 {
         }
     }
 
-    // Post otp
-    public ResponseEntity<?> postOtp(OtpDTO postRequest) {
+    // Resend OTP
+    public ResponseEntity<?> postEmail_2(MailDTO postRequest) {
         try {
-            boolean isValid = otpService.isOtpValid(postRequest.getEmail(), postRequest.getOtp());
+            if (userRepository.findByEmail(postRequest.getEmail()).isEmpty()) {
+                return unauthorized("Email not found");
+            } else {
+                mailService.resendOtp(postRequest.getEmail());
+                return ok("OTP resent to your registered email");
+            }
+        } catch (Exception e) {
+            return error("Failed to resend OTP: " + e.getMessage());
+        }
+    }
+    
+    // Post otp
+    public ResponseEntity<?> postOtp(MailDTO postRequest) {
+        try {
+            boolean isValid = mailService.isOtpValid(postRequest.getEmail(), postRequest.getOtp());
             if (!isValid) {
                 return badRequest("Invalid OTP");
             } else {
@@ -230,15 +245,15 @@ public class UserService1 {
         }
     }
 
-    // Patch password update 1
-    public ResponseEntity<?> patchPassword_1Update(OtpDTO updateRequest) {
+    // Patch password
+    public ResponseEntity<?> patchPassword_1(MailDTO patchRequest) {
         try {
-            Optional<User> userData = userRepository.findByEmail(updateRequest.getEmail());
+            Optional<User> userData = userRepository.findByEmail(patchRequest.getEmail());
             if (userData.isEmpty()) {
                 return notFound("Email not found");
             } else {
                 User userObj = userData.get();
-                userObj.setPassword(passwordEncoder.encode(updateRequest.getNewPassword()));
+                userObj.setPassword(passwordEncoder.encode(patchRequest.getNewPassword()));
                 userRepository.save(userObj);
                 return ok("Password updated successfully");
             }
@@ -254,7 +269,7 @@ public class UserService1 {
             Map<String, Object> response = new HashMap<>();
             response.put("name", userObj.getName());
             response.put("email", userObj.getEmail());
-            response.put("mobileNumber", userObj.getMobileNumber());
+            response.put("contactNumber", userObj.getContactNumber());
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             return error(e.getMessage());
@@ -263,19 +278,19 @@ public class UserService1 {
         }
     }
 
-    // Patch profile update
-    public ResponseEntity<?> patchProfileUpdate(String token, UserDTO updateRequest) {
+    // Patch profile
+    public ResponseEntity<?> patchProfile(String token, UserDTO patchRequest) {
         try {
             User userObj = getUserFromTokenOrThrow(token);
             // Only update fields that are not null
-            if (updateRequest.getName() != null) {
-                userObj.setName(updateRequest.getName());
+            if (patchRequest.getName() != null) {
+                userObj.setName(patchRequest.getName());
             }
-            if (updateRequest.getMobileNumber() != null) {
-                userObj.setMobileNumber(updateRequest.getMobileNumber());
+            if (patchRequest.getContactNumber() != null) {
+                userObj.setContactNumber(patchRequest.getContactNumber());
             }
-            if (updateRequest.getEmail() != null) {
-                userObj.setEmail(updateRequest.getEmail().toLowerCase());
+            if (patchRequest.getEmail() != null) {
+                userObj.setEmail(patchRequest.getEmail().toLowerCase());
             }
             userRepository.save(userObj);
             return ok("Profile updated successfully");
@@ -286,14 +301,14 @@ public class UserService1 {
         }
     }
 
-    // Patch password update 2
-    public ResponseEntity<?> patchPassword_2Update(String token, ChangePasswordDTO updateRequest) {
+    // Patch password
+    public ResponseEntity<?> patchPassword_2(String token, ChangePasswordDTO patchRequest) {
         try {
             User userObj = getUserFromTokenOrThrow(token);
-            if (!passwordEncoder.matches(updateRequest.getCurrentPassword(), userObj.getPassword())) {
+            if (!passwordEncoder.matches(patchRequest.getCurrentPassword(), userObj.getPassword())) {
                 return unauthorized("Current password is incorrect");
             } else {
-                userObj.setPassword(passwordEncoder.encode(updateRequest.getNewPassword()));
+                userObj.setPassword(passwordEncoder.encode(patchRequest.getNewPassword()));
                 userRepository.save(userObj);
                 return ok("New password updated successfully");
             }
@@ -305,13 +320,13 @@ public class UserService1 {
     }
 
     // Post password
-    public ResponseEntity<?> postPasswordAndGetOtp(String token, OtpDTO otpRequest) {
+    public ResponseEntity<?> postPasswordAndGetOtp(String token, MailDTO otpRequest) {
         try {
             User userObj = getUserFromTokenOrThrow(token);
             if (otpRequest.getPassword() == null || !passwordEncoder.matches(otpRequest.getPassword(), userObj.getPassword())) {
                 return unauthorized("Incorrect password");
             } else {
-                otpService.sendOtp(userObj.getEmail());
+                mailService.sendOtp(userObj.getEmail());
                 return ok("OTP sent to your registered email");
             }
         } catch (RuntimeException e) {
@@ -322,26 +337,26 @@ public class UserService1 {
     }
 
     // Post room
-    public ResponseEntity<?> postRoom(String token, RoomDTO registerRequest) {
+    public ResponseEntity<?> postRoom(String token, RoomsDTO registerRequest) {
         try {
             User userObj = getUserFromTokenOrThrow(token);
             if (registerRequest.getRoomName() == null || registerRequest.getRoomName().trim().isEmpty()) {
-                return badRequest("Room name cannot be empty");
+                return badRequest("Rooms name cannot be empty");
             }
-            if (roomRepository.existsByRoomNameIgnoreCaseAndUser_UserId(registerRequest.getRoomName(), userObj.getUserId())) {
-                return conflict("Room already exists for this user");
+            if (roomsRepository.existsByRoomNameIgnoreCaseAndUser_UserId(registerRequest.getRoomName(), userObj.getUserId())) {
+                return conflict("Rooms already exists for this user");
             }
-            int roomCount = roomRepository.countByUser_UserId(userObj.getUserId());
+            int roomCount = roomsRepository.countByUser_UserId(userObj.getUserId());
             if (roomCount >= 5) {
                 return badRequest("Maximum 5 rooms allowed per user");
             }
-            Room roomObj = new Room();
-            roomObj.setRoomId(generateRoomId());
-            roomObj.setRoomPath(roomPath(registerRequest.getRoomName()));
-            roomObj.setRoomName(registerRequest.getRoomName());
-            roomObj.setUser(userObj);
-            roomRepository.save(roomObj);
-            return ok("Room added successfully");
+            Rooms roomsObj = new Rooms();
+            roomsObj.setRoomId(generateRoomId());
+            roomsObj.setRoomPath(roomPath(registerRequest.getRoomName()));
+            roomsObj.setRoomName(registerRequest.getRoomName());
+            roomsObj.setUser(userObj);
+            roomsRepository.save(roomsObj);
+            return ok("Rooms added successfully");
         } catch (RuntimeException e) {
             return error(e.getMessage());
         } catch (Exception e) {
@@ -353,8 +368,8 @@ public class UserService1 {
     public ResponseEntity<?> getRoom(String token) {
         try {
             User userObj = getUserFromTokenOrThrow(token);
-            List<Room> roomObj = roomRepository.findByUser_UserId(userObj.getUserId());
-            List<Map<String, String>> result = roomObj.stream().map(ref -> {
+            List<Rooms> roomsObj = roomsRepository.findByUser_UserId(userObj.getUserId());
+            List<Map<String, String>> result = roomsObj.stream().map(ref -> {
                 Map<String, String> roomMap = new HashMap<>();
                 roomMap.put("roomId", ref.getRoomId());
                 roomMap.put("roomPath", ref.getRoomPath());
@@ -373,17 +388,17 @@ public class UserService1 {
     public ResponseEntity<?> deleteRoom(String token, String roomId) {
         try {
             User userObj = getUserFromTokenOrThrow(token);
-            Optional<Room> roomData = roomRepository.findByRoomIdAndUser_UserId(roomId, userObj.getUserId());
+            Optional<Rooms> roomData = roomsRepository.findByRoomIdAndUser_UserId(roomId, userObj.getUserId());
             if (roomData.isEmpty()) {
-                return notFound("Room not found");
+                return notFound("Rooms not found");
             }
-            Room roomObj = roomData.get();
-            List<Device> deviceList = deviceRepository.findByRoom(roomObj);
-            if (!deviceList.isEmpty()) {
+            Rooms roomsObj = roomData.get();
+            List<Things> thingsList = thingsRepository.findByRooms(roomsObj);
+            if (!thingsList.isEmpty()) {
                 return error("Cannot delete room. Devices are still associated with it.");
             }
-            roomRepository.delete(roomData.get());
-            return ok("Room deleted successfully");
+            roomsRepository.delete(roomData.get());
+            return ok("Rooms deleted successfully");
         } catch (RuntimeException e) {
             return error(e.getMessage());
         } catch (Exception e) {
@@ -465,66 +480,66 @@ public class UserService1 {
     }
 
     // Post thing and link items
-    public ResponseEntity<?> addThingAndLinkItems(String token, ThingDTO thingRequest) {
+    public ResponseEntity<?> postThingAndLinkItems(String token, ThingsDTO postRequest) {
         try {
             User userObj = getUserFromTokenOrThrow(token);
 
-            if (thingRequest.getRoomName() == null || thingRequest.getRoomName().isEmpty()) {
-                return badRequest("Room Name is required");
+            if (postRequest.getRoomName() == null || postRequest.getRoomName().isEmpty()) {
+                return badRequest("Rooms Name is required");
             }
 
-            Optional<Room> roomData = roomRepository.findByRoomNameAndUser(thingRequest.getRoomName(), userObj);
+            Optional<Rooms> roomData = roomsRepository.findByRoomNameAndUser(postRequest.getRoomName(), userObj);
             if (roomData.isEmpty()) {
-                return notFound("Room not found");
+                return notFound("Rooms not found");
             }
 
-            Room roomObj = roomData.get();
-            thingRequest.setRoomId(roomObj.getRoomId());
+            Rooms roomsObj = roomData.get();
+            postRequest.setRoomId(roomsObj.getRoomId());
 
             String sanitizedUserId = userObj.getUserId().toLowerCase().replaceAll("[^a-z0-9_-]", "_");
-            String sanitizedLabel = thingRequest.getLabel().toLowerCase().replaceAll("[^a-z0-9_-]", "_");
+            String sanitizedLabel = postRequest.getLabel().toLowerCase().replaceAll("[^a-z0-9_-]", "_");
 
             String generatedUID;
             ObjectMapper mapper = new ObjectMapper();
             ObjectNode rootNode = mapper.createObjectNode();
 
-            switch (thingRequest.getThingTypeUID()) {
+            switch (postRequest.getThingTypeUID()) {
                 case "mqtt:topic":
                     generatedUID = "mqtt:topic:mybroker:" + sanitizedUserId + "_" + sanitizedLabel;
                     rootNode.put("UID", generatedUID);
-                    rootNode.put("label", thingRequest.getLabel());
+                    rootNode.put("label", postRequest.getLabel());
                     rootNode.put("thingTypeUID", "mqtt:topic");
                     rootNode.put("bridgeUID", "mqtt:broker:mybroker");
                     rootNode.set("configuration", mapper.createObjectNode());
                     break;
 
                 case "network:pingdevice":
-                    if (thingRequest.getHost() == null || thingRequest.getHost().isEmpty()) {
+                    if (postRequest.getHost() == null || postRequest.getHost().isEmpty()) {
                         return badRequest("Host is required");
                     }
                     generatedUID = "network:pingdevice:" + sanitizedUserId + "_" + sanitizedLabel;
                     rootNode.put("UID", generatedUID);
-                    rootNode.put("label", thingRequest.getLabel());
+                    rootNode.put("label", postRequest.getLabel());
                     rootNode.put("thingTypeUID", "network:pingdevice");
                     ObjectNode pingConfig = mapper.createObjectNode();
-                    pingConfig.put("hostname", thingRequest.getHost());
+                    pingConfig.put("hostname", postRequest.getHost());
                     pingConfig.put("timeout", 5000);
                     pingConfig.put("refreshInterval", 60000);
                     rootNode.set("configuration", pingConfig);
                     break;
 
                 case "wiz:color-bulb":
-                    if (thingRequest.getHost() == null || thingRequest.getHost().isEmpty() || thingRequest.getMacAddress() == null) {
+                    if (postRequest.getHost() == null || postRequest.getHost().isEmpty() || postRequest.getMacAddress() == null) {
                         return badRequest("Host and MacAddress are required for WiZ");
                     }
                     generatedUID = "wiz:color-bulb:" + sanitizedUserId + "_" + sanitizedLabel;
                     rootNode.put("UID", generatedUID);
-                    rootNode.put("label", thingRequest.getLabel());
+                    rootNode.put("label", postRequest.getLabel());
                     rootNode.put("thingTypeUID", "wiz:color-bulb");
                     ObjectNode wizConfig = mapper.createObjectNode();
-                    wizConfig.put("ipAddress", thingRequest.getHost());
+                    wizConfig.put("ipAddress", postRequest.getHost());
                     wizConfig.put("pollingInterval", 60);
-                    wizConfig.put("macAddress", thingRequest.getMacAddress());
+                    wizConfig.put("macAddress", postRequest.getMacAddress());
                     rootNode.set("configuration", wizConfig);
                     break;
 
@@ -549,15 +564,15 @@ public class UserService1 {
                 return error("Failed to add device to OpenHAB");
             }
 
-            Device deviceObj = new Device();
-            deviceObj.setDeviceId(generateDeviceId());
-            deviceObj.setThingUID(generatedUID);
-            deviceObj.setThingTypeUID(thingRequest.getThingTypeUID());
-            deviceObj.setLabel(thingRequest.getLabel());
-            deviceObj.setHost(thingRequest.getHost());
-            deviceObj.setUser(userObj);
-            deviceObj.setRoom(roomObj);
-            deviceRepository.save(deviceObj);
+            Things thingsObj = new Things();
+            thingsObj.setThingId(generateThingId());
+            thingsObj.setThingUID(generatedUID);
+            thingsObj.setThingTypeUID(postRequest.getThingTypeUID());
+            thingsObj.setLabel(postRequest.getLabel());
+            thingsObj.setHost(postRequest.getHost());
+            thingsObj.setUser(userObj);
+            thingsObj.setRooms(roomsObj);
+            thingsRepository.save(thingsObj);
 
             String thingUrl = "http://localhost:8080/rest/things/" + generatedUID;
 
@@ -645,7 +660,7 @@ public class UserService1 {
             }
 
             Map<String, Object> response = new HashMap<>();
-            response.put("message", "Device added and controls created successfully");
+            response.put("message", "Things added and controls created successfully");
             response.put("thingUID", generatedUID);
             response.put("linkedItems", linkedItems);
             return ResponseEntity.ok(response);
@@ -658,12 +673,12 @@ public class UserService1 {
     }
 
     // Get thing and items
-    public ResponseEntity<?> getThingsWithItems(String token) {
+    public ResponseEntity<?> getThingWithItems(String token) {
         try {
             // Get user object
             User userObj = getUserFromTokenOrThrow(token);
             // Get specific user room list
-            List<Room> userRooms = roomRepository.findByUser_UserId(userObj.getUserId());
+            List<Rooms> userRooms = roomsRepository.findByUser_UserId(userObj.getUserId());
 
             String openHABItemsUrl = "http://localhost:8080/rest/items";
 
@@ -684,12 +699,12 @@ public class UserService1 {
 
             List<Map<String, Object>> thingsList = new ArrayList<>();
 
-            for (Room room : userRooms) {
-                List<Device> devices = deviceRepository.findByRoom_RoomId(room.getRoomId());
+            for (Rooms rooms : userRooms) {
+                List<Things> things = thingsRepository.findByRooms_RoomId(rooms.getRoomId());
 
-                for (Device device : devices) {
-                    String deviceId = device.getDeviceId();
-                    String thingUID = device.getThingUID();
+                for (Things things1 : things) {
+                    String thingId = things1.getThingId();
+                    String thingUID = things1.getThingUID();
                     String thingUrl = "http://localhost:8080/rest/things/" + thingUID;
 
                     ResponseEntity<String> thingResponse;
@@ -727,15 +742,15 @@ public class UserService1 {
                         }
                     }
                     Map<String, Object> thingInfo = new HashMap<>();
-                    thingInfo.put("deviceId", deviceId);
+                    thingInfo.put("thingId", thingId);
                     thingInfo.put("thingUID", thingUID);
 //                    thingInfo.put("thingTypeUID", thingJson.optString("thingTypeUID"));
                     thingInfo.put("label", thingJson.optString("label"));
 //                    thingInfo.put("bridgeUID", thingJson.optString("bridgeUID"));
 //                    thingInfo.put("configuration", thingJson.optJSONObject("configuration").toMap());
 //                    thingInfo.put("channels", channelUIDs);
-                    thingInfo.put("roomId", room.getRoomId());
-                    thingInfo.put("roomName", room.getRoomName());
+                    thingInfo.put("roomId", rooms.getRoomId());
+                    thingInfo.put("roomName", rooms.getRoomName());
                     thingInfo.put("items", deviceItems);
                     thingsList.add(thingInfo);
                 }
@@ -746,39 +761,73 @@ public class UserService1 {
         }
     }
 
-    // Delete device
-    public ResponseEntity<?> deleteDevice(String token, String thingUID) {
+//    private String getLinkedItemNameForThing(RestTemplate restTemplate, HttpHeaders headers, String thingUID) throws Exception {
+//        HttpEntity<String> requestEntity = new HttpEntity<>(headers);
+//        ResponseEntity<String> thingResponse = restTemplate.exchange(
+//                "http://localhost:8080/rest/things/" + thingUID,
+//                HttpMethod.GET,
+//                requestEntity,
+//                String.class
+//        );
+//
+//        if (!thingResponse.getStatusCode().is2xxSuccessful()) {
+//            throw new RuntimeException("Failed to fetch thing details from OpenHAB");
+//        }
+//
+//        String thingJson = thingResponse.getBody();
+//        Map<String, Object> thingMap = new ObjectMapper().readValue(thingJson, new TypeReference<>() {});
+//        List<Map<String, Object>> channels = (List<Map<String, Object>>) thingMap.get("channels");
+//
+//        return channels.stream()
+//                .filter(c -> ((List<?>) c.get("linkedItems")) != null && !((List<?>) c.get("linkedItems")).isEmpty())
+//                .filter(c -> ((String) c.get("id")).toLowerCase().contains("color"))
+//                .map(c -> ((List<String>) c.get("linkedItems")).get(0))
+//                .findFirst()
+//                .orElseGet(() -> channels.stream()
+//                        .filter(c -> ((List<?>) c.get("linkedItems")) != null && !((List<?>) c.get("linkedItems")).isEmpty())
+//                        .map(c -> ((List<String>) c.get("linkedItems")).get(0))
+//                        .findFirst()
+//                        .orElseThrow(() -> new RuntimeException("No linked items found")));
+//    }
+
+    // Delete thing
+    public ResponseEntity<?> deleteThing(String token, String thingUID) {
         try {
+            // 1. Authenticate user and find device
             User userObj = getUserFromTokenOrThrow(token);
-            Optional<Device> deviceOpt = deviceRepository.findByThingUIDAndUser_UserId(thingUID, userObj.getUserId());
+            Optional<Things> deviceOpt = thingsRepository.findByThingUIDAndUser_UserId(thingUID, userObj.getUserId());
             if (deviceOpt.isEmpty()) {
-                return notFound("Device not found for this user");
+                return notFound("Thing not found for this user");
             }
 
+            // 2. Prepare OpenHAB request
             RestTemplate restTemplate = new RestTemplate();
             HttpHeaders headers = new HttpHeaders();
-            headers.setBearerAuth(openHABToken); // Make sure this is set
+            headers.setBearerAuth(openHABToken);
+            HttpEntity<String> requestEntity = new HttpEntity<>(headers);
 
-            // 1. Fetch items linked to the thing
-            String itemUrl = "http://localhost:8080/rest/things/" + thingUID;
-            ResponseEntity<Map> thingResponse = restTemplate.exchange(itemUrl, HttpMethod.GET, new HttpEntity<>(headers), Map.class);
+            // 3. Fetch Thing details
+            ResponseEntity<Map> thingResponse = restTemplate.exchange(
+                    "http://localhost:8080/rest/things/" + thingUID,
+                    HttpMethod.GET,
+                    requestEntity,
+                    Map.class
+            );
             if (!thingResponse.getStatusCode().is2xxSuccessful()) {
                 return error("Failed to fetch thing info from OpenHAB.");
             }
 
-            // Extract channels and item names
+            // 4. Extract linked items from channels
             List<Map<String, Object>> channels = (List<Map<String, Object>>) thingResponse.getBody().get("channels");
             if (channels != null) {
                 for (Map<String, Object> channel : channels) {
                     List<String> linkedItems = (List<String>) channel.get("linkedItems");
                     if (linkedItems != null) {
                         for (String itemName : linkedItems) {
-                            // 2. Delete each linked item
                             String deleteItemUrl = "http://localhost:8080/rest/items/" + itemName;
                             try {
-                                restTemplate.exchange(deleteItemUrl, HttpMethod.DELETE, new HttpEntity<>(headers), Void.class);
+                                restTemplate.exchange(deleteItemUrl, HttpMethod.DELETE, requestEntity, Void.class);
                             } catch (RestClientException e) {
-                                // Continue deleting other items even if one fails
                                 System.err.println("Failed to delete item " + itemName + ": " + e.getMessage());
                             }
                         }
@@ -786,17 +835,61 @@ public class UserService1 {
                 }
             }
 
-            // 3. Delete the Thing itself
+            // 5. Delete associated rules
+            // ✅ Get the correct thingId from the entity
+            Things thingEntity = deviceOpt.get();
+            String thingId = thingEntity.getThingId(); // use this, not thingUID
+
+// ✅ Now safely fetch rules using thingId
+            List<Rules> relatedRules = rulesRepository.findAllByThingIdAndUser(thingId, userObj);
+            System.out.println("Rules to delete: " + relatedRules.size());
+
+            for (Rules rule : relatedRules) {
+                try {
+                    // ✅ Get the linked item name for this thing
+                    String itemName = channels.stream()
+                            .filter(c -> ((List<?>) c.get("linkedItems")) != null && !((List<?>) c.get("linkedItems")).isEmpty())
+                            .filter(c -> ((String) c.get("id")).toLowerCase().contains("color")) // optional filter
+                            .map(c -> ((List<String>) c.get("linkedItems")).get(0))
+                            .findFirst()
+                            .orElseGet(() -> channels.stream()
+                                    .filter(c -> ((List<?>) c.get("linkedItems")) != null && !((List<?>) c.get("linkedItems")).isEmpty())
+                                    .map(c -> ((List<String>) c.get("linkedItems")).get(0))
+                                    .findFirst()
+                                    .orElseThrow(() -> new RuntimeException("No linked items found")));
+
+                    // ✅ Construct rule names
+                    String ruleOnName = "Auto_ON_" + itemName + "_" + rule.getRuleId();
+                    String ruleOffName = "Auto_OFF_" + itemName + "_" + rule.getRuleId();
+
+                    System.out.println("Deleting rules: " + ruleOnName + ", " + ruleOffName);
+
+                    // ✅ Delete rules from OpenHAB
+                    restTemplate.exchange("http://localhost:8080/rest/rules/" + ruleOnName,
+                            HttpMethod.DELETE, requestEntity, String.class);
+                    restTemplate.exchange("http://localhost:8080/rest/rules/" + ruleOffName,
+                            HttpMethod.DELETE, requestEntity, String.class);
+
+                    // ✅ Delete rule from database
+                    rulesRepository.delete(rule);
+
+                } catch (Exception e) {
+                    System.err.println("Failed to delete rule for thing " + thingId + ": " + e.getMessage());
+                }
+            }
+
+
+            // 6. Delete Thing from OpenHAB
             String deleteThingUrl = "http://localhost:8080/rest/things/" + thingUID;
-            ResponseEntity<Void> openHABResponse = restTemplate.exchange(deleteThingUrl, HttpMethod.DELETE, new HttpEntity<>(headers), Void.class);
+            ResponseEntity<Void> openHABResponse = restTemplate.exchange(deleteThingUrl, HttpMethod.DELETE, requestEntity, Void.class);
             if (!openHABResponse.getStatusCode().is2xxSuccessful()) {
                 return error("Failed to delete thing from OpenHAB. Status: " + openHABResponse.getStatusCode());
             }
 
-            // 4. Remove from your DB
-            deviceRepository.delete(deviceOpt.get());
+            // 7. Delete Thing from DB
+            thingsRepository.delete(deviceOpt.get());
 
-            return ok("Device and related items deleted successfully");
+            return ok("Thing, related items, and rules deleted successfully");
 
         } catch (RuntimeException e) {
             return error(e.getMessage());
@@ -817,13 +910,13 @@ public class UserService1 {
                 return badRequest("Missing itemName or command");
             }
 
-            List<Room> rooms = roomRepository.findByUser(userObj);
+            List<Rooms> rooms = roomsRepository.findByUser(userObj);
             boolean authorized = false;
 
-            for (Room room : rooms) {
-                List<Device> devices = deviceRepository.findByRoom(room);
-                for (Device device : devices) {
-                    String thingUID = device.getThingUID();
+            for (Rooms room : rooms) {
+                List<Things> things = thingsRepository.findByRooms(room);
+                for (Things things1 : things) {
+                    String thingUID = things1.getThingUID();
                     if (thingUID != null && itemName.contains(thingUID.replaceAll("[:\\-]", "_"))) {
                         authorized = true;
                         break;
@@ -859,48 +952,54 @@ public class UserService1 {
         }
     }
 
-    // Post scenes
-    public ResponseEntity<?> postScenes(String token, ScenesDTO postRequest) {
+    // Post rule
+    public ResponseEntity<?> postRule(String token, RulesDTO postRequest) {
         try {
             User user = getUserFromTokenOrThrow(token);
             if (postRequest.getFromTime() == null || postRequest.getToTime() == null || postRequest.getDays() == null
-                    || postRequest.getDays().isEmpty() || postRequest.getDeviceId() == null
+                    || postRequest.getDays().isEmpty() || postRequest.getThingId() == null
                     || postRequest.getRoomId() == null || postRequest.getCommand() == null) {
-                return badRequest("Missing required scenes fields");
+                return badRequest("Missing required rules fields");
             }
-            List<Room> userRooms = roomRepository.findByUser(user);
+            List<Rooms> userRooms = roomsRepository.findByUser(user);
             boolean authorizedRoom = userRooms.stream().anyMatch(r -> r.getRoomId().equals(postRequest.getRoomId()));
             if (!authorizedRoom) {
-                return unauthorized("User not authorized for the specified room");
+                return unauthorized("User not authorized for the specified rooms");
             }
-            List<Device> devices = deviceRepository.findByRoom_RoomId(postRequest.getRoomId());
-            System.out.println(devices);
-            System.out.println(postRequest.getDeviceId());
-            Device device = devices.stream()
-                    .filter(d -> d.getDeviceId().equals(postRequest.getDeviceId()))
+            List<Things> things = thingsRepository.findByRooms_RoomId(postRequest.getRoomId());
+            System.out.println(things);
+            System.out.println(postRequest.getThingId());
+            Things thing = things.stream()
+                    .filter(d -> d.getThingId().equals(postRequest.getThingId()))
                     .findFirst()
-                    .orElseThrow(() -> new RuntimeException("Device not found"));
-            boolean authorizedDevice = devices.contains(device);
+                    .orElseThrow(() -> new RuntimeException("Things not found"));
+            boolean authorizedDevice = things.contains(thing);
             if (!authorizedDevice) {
-                return unauthorized("User not authorized for the specified device");
+                return unauthorized("User not authorized for the specified things");
             }
-            // Save scenes entity
-            Scenes scenes = new Scenes();
-            scenes.setScenesId(generateScenesId());
-            scenes.setScenesName(postRequest.getScenesName());
-            scenes.setFromTime(postRequest.getFromTime());
-            scenes.setToTime(postRequest.getToTime());
-            scenes.setDays(postRequest.getDays());
-            scenes.setRoomId(postRequest.getRoomId());
-            scenes.setDeviceId(postRequest.getDeviceId());
-            scenes.setCommand(postRequest.getCommand());
-            scenes.setUser(user);
+            // Save rules entity
+            Rules rules = new Rules();
+            rules.setRuleId(generateRuleId());
+            rules.setRuleName(postRequest.getRuleName());
+            rules.setFromTime(postRequest.getFromTime());
+            rules.setToTime(postRequest.getToTime());
+            rules.setDays(postRequest.getDays());
+            rules.setRoomId(postRequest.getRoomId());
+            rules.setThingId(postRequest.getThingId());
+            rules.setCommand(postRequest.getCommand());
+            rules.setUser(user);
 
-            Room room = roomRepository.findById(postRequest.getRoomId())
-                    .orElseThrow(() -> new RuntimeException("Room not found"));
-            scenes.setRoomName(room.getRoomName()); // <-- This line sets the room name
+            // Set enabled field, default true if null in DTO
+            if (postRequest.getEnabled() != null) {
+                rules.setEnabled(postRequest.getEnabled());
+            } else {
+                rules.setEnabled(true);
+            }
 
-            scenesRepository.save(scenes);
+            Rooms rooms = roomsRepository.findById(postRequest.getRoomId())
+                    .orElseThrow(() -> new RuntimeException("Rooms not found"));
+            rules.setRoomName(rooms.getRoomName()); // <-- This line sets the rooms name
+
 
             // Validate time format
             if (!postRequest.getFromTime().matches("\\d{2}:\\d{2}") || !postRequest.getToTime().matches("\\d{2}:\\d{2}")) {
@@ -920,7 +1019,7 @@ public class UserService1 {
             String cronOn = String.format("0 %s %s ? * %s *", fromMinute, fromHour, daysCron);
             String cronOff = String.format("0 %s %s ? * %s *", toMinute, toHour, daysCron);
 
-            String thingUID = device.getThingUID();
+            String thingUID = thing.getThingUID();
 
             // Fetch itemName dynamically from thingUID
             RestTemplate restTemplate = new RestTemplate();
@@ -949,7 +1048,7 @@ public class UserService1 {
             // Extract channel linkedItems
             List<Map<String, Object>> channels = (List<Map<String, Object>>) thingMap.get("channels");
             if (channels == null || channels.isEmpty()) {
-                return badRequest("No channels found for the device");
+                return badRequest("No channels found for the things");
             }
 
             // Try to get the itemName from the "color" channel (or fallback to first channel with a linked item)
@@ -965,8 +1064,8 @@ public class UserService1 {
                             .orElseThrow(() -> new RuntimeException("No linked items found in channels")));
 
             // Rule names
-            String ruleOnName = "Auto_ON_" + itemName + "_" + scenes.getScenesId();
-            String ruleOffName = "Auto_OFF_" + itemName + "_" + scenes.getScenesId();
+            String ruleOnName = "Auto_ON_" + itemName + "_" + rules.getRuleId();
+            String ruleOffName = "Auto_OFF_" + itemName + "_" + rules.getRuleId();
 
             // Rule ON JSON
             String ruleOnJson = "{"
@@ -975,15 +1074,15 @@ public class UserService1 {
                     + "\"description\": \"Auto ON rule for " + itemName + "\","
                     + "\"visibility\": \"VISIBLE\","
                     + "\"triggers\": [{"
-                    + "    \"id\": \"cronTriggerOn_" + scenes.getScenesId() + "\","
+                    + "    \"id\": \"cronTriggerOn_" + rules.getRuleId() + "\","
                     + "    \"label\": \"Turn ON at " + postRequest.getFromTime() + "\","
-                    + "    \"description\": \"Turns device ON based on schedule\","
+                    + "    \"description\": \"Turns things ON based on schedule\","
                     + "    \"configuration\": { \"cronExpression\": \"" + cronOn + "\" },"
                     + "    \"type\": \"timer.GenericCronTrigger\""
                     + "}],"
                     + "\"conditions\": [],"
                     + "\"actions\": [{"
-                    + "    \"id\": \"actionOn_" + scenes.getScenesId() + "\","
+                    + "    \"id\": \"actionOn_" + rules.getRuleId() + "\","
                     + "    \"label\": \"Send ON command\","
                     + "    \"description\": \"Turns ON the item\","
                     + "    \"configuration\": {"
@@ -1002,15 +1101,15 @@ public class UserService1 {
                     + "\"description\": \"Auto OFF rule for " + itemName + "\","
                     + "\"visibility\": \"VISIBLE\","
                     + "\"triggers\": [{"
-                    + "    \"id\": \"cronTriggerOff_" + scenes.getScenesId() + "\","
+                    + "    \"id\": \"cronTriggerOff_" + rules.getRuleId() + "\","
                     + "    \"label\": \"Turn OFF at " + postRequest.getToTime() + "\","
-                    + "    \"description\": \"Turns device OFF based on schedule\","
+                    + "    \"description\": \"Turns things OFF based on schedule\","
                     + "    \"configuration\": { \"cronExpression\": \"" + cronOff + "\" },"
                     + "    \"type\": \"timer.GenericCronTrigger\""
                     + "}],"
                     + "\"conditions\": [],"
                     + "\"actions\": [{"
-                    + "    \"id\": \"actionOff_" + scenes.getScenesId() + "\","
+                    + "    \"id\": \"actionOff_" + rules.getRuleId() + "\","
                     + "    \"label\": \"Send OFF command\","
                     + "    \"description\": \"Turns OFF the item\","
                     + "    \"configuration\": {"
@@ -1035,8 +1134,8 @@ public class UserService1 {
             if (!responseOff.getStatusCode().is2xxSuccessful()) {
                 return ResponseEntity.status(responseOff.getStatusCode()).body("Failed to create OFF rule in OpenHAB: " + responseOff.getBody());
             }
-
-            return ok("Scenes and OpenHAB rules created successfully");
+            rulesRepository.save(rules);
+            return ok("Rules and OpenHAB rules created successfully");
 
         } catch (RuntimeException e) {
             return error(e.getMessage());
@@ -1045,130 +1144,286 @@ public class UserService1 {
         }
     }
 
-    // Get scenes
-    public ResponseEntity<?> getScenes(String token) {
+    // Get rule
+    public ResponseEntity<?> getRule(String token) {
         try {
             User user = getUserFromTokenOrThrow(token);
-            List<Scenes> scenesList = scenesRepository.findByUser(user);
+            List<Rules> rulesList = rulesRepository.findByUser(user);
 
-            List<ScenesDTO> response = scenesList.stream().map(scene -> {
-                ScenesDTO dto = new ScenesDTO();
-                dto.setScenesId(scene.getScenesId());
-                dto.setScenesName(scene.getScenesName());
+            List<RulesDTO> response = rulesList.stream().map(scene -> {
+                RulesDTO dto = new RulesDTO();
+                dto.setRuleId(scene.getRuleId());
+                dto.setRuleName(scene.getRuleName());
                 dto.setFromTime(formatTo12Hour(scene.getFromTime()));
                 dto.setToTime(formatTo12Hour(scene.getToTime()));
                 dto.setDays(scene.getDays());
+                dto.setRoomId(scene.getRoomId());
                 dto.setRoomName(scene.getRoomName());
+                dto.setThingId(scene.getThingId());
                 dto.setCommand(scene.getCommand());
+                dto.setEnabled(scene.isEnabled());
                 return dto;
             }).collect(Collectors.toList());
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return error("Failed to load scenes: " + e.getMessage());
+            return error("Failed to load rule: " + e.getMessage());
         }
     }
 
-    // Patch scenes
-    public ResponseEntity<?> patchScenesAndRules(String token, List<ScenesDTO> updatedScenesList) {
+    // Patch rule
+    public ResponseEntity<?> patchRule(String token, RulesDTO dto) {
         try {
             User user = getUserFromTokenOrThrow(token);
             RestTemplate restTemplate = new RestTemplate();
 
-            // Headers for OpenHAB
+            // OpenHAB headers
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.setBearerAuth(openHABToken);
             HttpEntity<String> requestEntity = new HttpEntity<>(headers);
 
-            // Fetch all OpenHAB items once
+            // Fetch all OpenHAB items
             ResponseEntity<String> responseObj = restTemplate.exchange(
                     "http://localhost:8080/rest/items", HttpMethod.GET, requestEntity, String.class);
             JSONArray allItems = new JSONArray(responseObj.getBody());
 
-            for (ScenesDTO dto : updatedScenesList) {
-                // 1. Update DB
-                Scenes scene = scenesRepository.findByScenesIdAndUser(dto.getScenesId(), user)
-                        .orElseThrow(() -> new RuntimeException("Scene not found: " + dto.getScenesId()));
+            // Update rule in DB
+            Rules scene = rulesRepository.findByRuleIdAndUser(dto.getRuleId(), user)
+                    .orElseThrow(() -> new RuntimeException("Scene not found: " + dto.getRuleId()));
 
-                scene.setScenesName(dto.getScenesName());
-                scene.setFromTime(dto.getFromTime());
-                scene.setToTime(dto.getToTime());
-                scene.setDays(dto.getDays());
-                scene.setRoomName(dto.getRoomName());
-                scene.setCommand(dto.getCommand());
-                scenesRepository.save(scene);
+            scene.setRuleName(dto.getRuleName());
+            scene.setFromTime(dto.getFromTime());
+            scene.setToTime(dto.getToTime());
+            scene.setDays(dto.getDays());
+            scene.setRoomName(dto.getRoomName());
+            scene.setCommand(dto.getCommand());
+            scene.setUser(user);
 
-                // 2. Identify associated device
-                Room room = roomRepository.findByRoomNameAndUser(dto.getRoomName(), user)
-                        .orElseThrow(() -> new RuntimeException("Room not found: " + dto.getRoomName()));
+            // Identify associated things and rooms
+            Rooms rooms = roomsRepository.findByRoomNameAndUser(dto.getRoomName(), user)
+                    .orElseThrow(() -> new RuntimeException("Rooms not found: " + dto.getRoomName()));
 
-                List<Device> roomDevices = deviceRepository.findByRoom_RoomId(room.getRoomId());
-                if (roomDevices.isEmpty()) {
-                    throw new RuntimeException("No device found in room: " + dto.getRoomName());
+            List<Things> roomThings = thingsRepository.findByRooms_RoomId(rooms.getRoomId());
+            if (roomThings.isEmpty()) {
+                throw new RuntimeException("No things found in rooms: " + dto.getRoomName());
+            }
+            Things things = roomThings.get(0); // Or your logic to select things
+            String thingUID = things.getThingUID();
+            String normalizedUID = thingUID.replaceAll("[:\\-]", "_");
+
+            scene.setThingId(things.getThingId());
+            scene.setRoomId(rooms.getRoomId());
+
+            // Find itemName for rule based on thingUID and "_color" suffix
+            String expectedSuffix = "_color"; // Or dynamic
+            String itemName = null;
+            for (int i = 0; i < allItems.length(); i++) {
+                JSONObject item = allItems.getJSONObject(i);
+                String name = item.getString("name");
+                if (name.contains(normalizedUID) && name.endsWith(expectedSuffix)) {
+                    itemName = name;
+                    break;
                 }
-
-                // Assume the first device in the room is used for this scene
-                Device device = roomDevices.get(0);
-                String thingUID = device.getThingUID();
-                String normalizedUID = thingUID.replaceAll("[:\\-]", "_");
-
-                // 3. Match corresponding OpenHAB item
-                String itemName = null;
-                for (int i = 0; i < allItems.length(); i++) {
-                    JSONObject item = allItems.getJSONObject(i);
-                    String name = item.getString("name");
-                    if (name.contains(normalizedUID)) {
-                        itemName = name;
-                        break;
-                    }
-                }
-
-                if (itemName == null) {
-                    throw new RuntimeException("Matching OpenHAB item not found for thing: " + thingUID);
-                }
-
-                // 4. Create rule ID and cron expression
-                String ruleId = "Auto_" + dto.getCommand().toUpperCase() + "_" + itemName;
-                LocalTime localTime = LocalTime.parse(dto.getFromTime(), DateTimeFormatter.ofPattern("HH:mm"));
-                String cronDays = buildDaysCron(dto.getDays());
-                String cron = String.format("0 %d %d ? * %s", localTime.getMinute(), localTime.getHour(), cronDays);
-
-                // 5. Build OpenHAB rule
-                Map<String, Object> rulePayload = new HashMap<>();
-                rulePayload.put("uid", ruleId);
-                rulePayload.put("name", ruleId);
-                rulePayload.put("description", "Auto rule for scene: " + dto.getScenesName());
-
-                rulePayload.put("triggers", List.of(Map.of(
-                        "id", "cronTrigger",
-                        "type", "timer.GenericCronTrigger",
-                        "configuration", Map.of("cronExpression", cron)
-                )));
-
-                rulePayload.put("actions", List.of(Map.of(
-                        "id", "commandAction",
-                        "type", "core.ItemCommandAction",
-                        "configuration", Map.of(
-                                "itemName", itemName,
-                                "command", dto.getCommand()
-                        )
-                )));
-
-                rulePayload.put("conditions", List.of());
-                rulePayload.put("configuration", Map.of());
-                rulePayload.put("tags", List.of());
-
-                // 6. PUT to OpenHAB
-                HttpEntity<Map<String, Object>> entity = new HttpEntity<>(rulePayload, headers);
-                String openhabUrl = "http://localhost:8080/rest/rules/" + ruleId;
-                restTemplate.exchange(openhabUrl, HttpMethod.PUT, entity, String.class);
+            }
+            if (itemName == null) {
+                throw new RuntimeException("Matching OpenHAB item not found for thing: " + thingUID);
             }
 
-            return ResponseEntity.ok("Scenes and dynamic rules updated successfully.");
+            // Build cron expressions for ON and OFF times
+            String daysCron = buildDaysCron(dto.getDays());
+            LocalTime fromTime = LocalTime.parse(dto.getFromTime(), DateTimeFormatter.ofPattern("HH:mm"));
+            LocalTime toTime = LocalTime.parse(dto.getToTime(), DateTimeFormatter.ofPattern("HH:mm"));
 
+            String cronOn = String.format("0 %d %d ? * %s *", fromTime.getMinute(), fromTime.getHour(), daysCron);
+            String cronOff = String.format("0 %d %d ? * %s *", toTime.getMinute(), toTime.getHour(), daysCron);
+
+            // Rule UIDs
+            String ruleOnName = "Auto_ON_" + itemName + "_" + scene.getRuleId();
+            String ruleOffName = "Auto_OFF_" + itemName + "_" + scene.getRuleId();
+
+            // Create rule JSON for ON and OFF rules
+            Map<String, Object> ruleOnPayload = Map.of(
+                    "uid", ruleOnName,
+                    "name", ruleOnName,
+                    "description", "Auto ON rule for " + itemName,
+                    "visibility", "VISIBLE",
+                    "triggers", List.of(Map.of(
+                            "id", "cronTriggerOn_" + scene.getRuleId(),
+                            "type", "timer.GenericCronTrigger",
+                            "configuration", Map.of("cronExpression", cronOn)
+                    )),
+                    "conditions", List.of(),
+                    "actions", List.of(Map.of(
+                            "id", "actionOn_" + scene.getRuleId(),
+                            "type", "core.ItemCommandAction",
+                            "configuration", Map.of(
+                                    "itemName", itemName,
+                                    "command", "ON"
+                            )
+                    )),
+                    "configuration", Map.of(),
+                    "tags", List.of()
+            );
+
+            Map<String, Object> ruleOffPayload = Map.of(
+                    "uid", ruleOffName,
+                    "name", ruleOffName,
+                    "description", "Auto OFF rule for " + itemName,
+                    "visibility", "VISIBLE",
+                    "triggers", List.of(Map.of(
+                            "id", "cronTriggerOff_" + scene.getRuleId(),
+                            "type", "timer.GenericCronTrigger",
+                            "configuration", Map.of("cronExpression", cronOff)
+                    )),
+                    "conditions", List.of(),
+                    "actions", List.of(Map.of(
+                            "id", "actionOff_" + scene.getRuleId(),
+                            "type", "core.ItemCommandAction",
+                            "configuration", Map.of(
+                                    "itemName", itemName,
+                                    "command", "OFF"
+                            )
+                    )),
+                    "configuration", Map.of(),
+                    "tags", List.of()
+            );
+
+            // Fetch all rules to check if ON and OFF exist
+            ResponseEntity<String> rulesResponse = restTemplate.exchange(
+                    "http://localhost:8080/rest/rules", HttpMethod.GET, requestEntity, String.class);
+            JSONArray allRules = new JSONArray(rulesResponse.getBody());
+
+            boolean ruleOnExists = false;
+            boolean ruleOffExists = false;
+
+            for (int i = 0; i < allRules.length(); i++) {
+                JSONObject rule = allRules.getJSONObject(i);
+                String uid = rule.getString("uid");
+                if (ruleOnName.equals(uid)) ruleOnExists = true;
+                if (ruleOffName.equals(uid)) ruleOffExists = true;
+            }
+
+            // Update or error for ON rule
+            HttpEntity<Map<String, Object>> entityOn = new HttpEntity<>(ruleOnPayload, headers);
+            String ruleOnUrl = "http://localhost:8080/rest/rules/" + ruleOnName;
+            if (ruleOnExists) {
+                restTemplate.exchange(ruleOnUrl, HttpMethod.PUT, entityOn, String.class);
+            } else {
+                // Optionally create it if missing
+                restTemplate.postForEntity("http://localhost:8080/rest/rules", entityOn, String.class);
+            }
+
+            // Update or error for OFF rule
+            HttpEntity<Map<String, Object>> entityOff = new HttpEntity<>(ruleOffPayload, headers);
+            String ruleOffUrl = "http://localhost:8080/rest/rules/" + ruleOffName;
+            if (ruleOffExists) {
+                restTemplate.exchange(ruleOffUrl, HttpMethod.PUT, entityOff, String.class);
+            } else {
+                // Optionally create it if missing
+                restTemplate.postForEntity("http://localhost:8080/rest/rules", entityOff, String.class);
+            }
+            rulesRepository.save(scene);
+            return ResponseEntity.ok("Scene and ON/OFF rules updated successfully.");
+
+        } catch (HttpClientErrorException.NotFound ex) {
+            return error("Rule not found. Cannot update a non-existing rule.");
         } catch (Exception e) {
             return error("Dynamic rule update failed: " + e.getMessage());
+        }
+    }
+
+    // Patch rule (toggle)
+    public ResponseEntity<?> toggleRule(String token, RulesToggleDTO dto) {
+        try {
+            User user = getUserFromTokenOrThrow(token);
+            Rules scene = rulesRepository.findByRuleIdAndUser(dto.getRuleId(), user)
+                    .orElseThrow(() -> new RuntimeException("Scene not found: " + dto.getRuleId()));
+
+            Things things = thingsRepository.findById(scene.getThingId())
+                    .orElseThrow(() -> new RuntimeException("Things not found"));
+
+            String thingUID = things.getThingUID();
+            String normalizedUID = thingUID.replaceAll("[:\\-]", "_");
+            String expectedSuffix = "_color"; // adjust as needed
+            String itemName = normalizedUID + expectedSuffix;
+
+            String ruleOnName = "Auto_ON_" + itemName + "_" + scene.getRuleId();
+            String ruleOffName = "Auto_OFF_" + itemName + "_" + scene.getRuleId();
+
+            RestTemplate restTemplate = new RestTemplate();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(openHABToken);
+            headers.setContentType(MediaType.TEXT_PLAIN); // OpenHAB expects plain text
+
+            String enableStr = dto.isEnable() ? "true" : "false";
+            HttpEntity<String> entity = new HttpEntity<>(enableStr, headers);
+
+            // Enable/disable OpenHAB rules
+            restTemplate.exchange("http://localhost:8080/rest/rules/" + ruleOnName + "/enable", HttpMethod.POST, entity, String.class);
+            restTemplate.exchange("http://localhost:8080/rest/rules/" + ruleOffName + "/enable", HttpMethod.POST, entity, String.class);
+
+            // ✅ Update DB as well
+            scene.setEnabled(dto.isEnable());
+            rulesRepository.save(scene); // persist updated enabled status
+
+            return ResponseEntity.ok("Rules " + (dto.isEnable() ? "enabled" : "disabled") + " successfully");
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error toggling rules: " + e.getMessage());
+        }
+    }
+
+    // Delete rule
+    public ResponseEntity<?> deleteRule(String token, String ruleId) {
+        try {
+            User user = getUserFromTokenOrThrow(token);
+            Rules scene = rulesRepository.findByRuleIdAndUser(ruleId, user)
+                    .orElseThrow(() -> new RuntimeException("Scene not found or not authorized"));
+            Things things = thingsRepository.findById(scene.getThingId())
+                    .orElseThrow(() -> new RuntimeException("Things not found"));
+            String thingUID = things.getThingUID();
+            RestTemplate restTemplate = new RestTemplate();
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setBearerAuth(openHABToken);
+            HttpEntity<String> requestEntity = new HttpEntity<>(headers);
+            ResponseEntity<String> thingResponse = restTemplate.exchange(
+                    "http://localhost:8080/rest/things/" + thingUID,
+                    HttpMethod.GET,
+                    requestEntity,
+                    String.class
+            );
+            if (!thingResponse.getStatusCode().is2xxSuccessful()) {
+                return ResponseEntity.status(thingResponse.getStatusCode())
+                        .body("Failed to fetch thing details from OpenHAB: " + thingResponse.getBody());
+            }
+            String thingJson = thingResponse.getBody();
+            Map<String, Object> thingMap = new ObjectMapper().readValue(thingJson, new TypeReference<>() {});
+            List<Map<String, Object>> channels = (List<Map<String, Object>>) thingMap.get("channels");
+            String itemName = channels.stream()
+                    .filter(c -> ((List<?>) c.get("linkedItems")) != null && !((List<?>) c.get("linkedItems")).isEmpty())
+                    .filter(c -> ((String) c.get("id")).toLowerCase().contains("color"))
+                    .map(c -> ((List<String>) c.get("linkedItems")).get(0))
+                    .findFirst()
+                    .orElseGet(() -> channels.stream()
+                            .filter(c -> ((List<?>) c.get("linkedItems")) != null && !((List<?>) c.get("linkedItems")).isEmpty())
+                            .map(c -> ((List<String>) c.get("linkedItems")).get(0))
+                            .findFirst()
+                            .orElseThrow(() -> new RuntimeException("No linked items found in channels")));
+            String ruleOnName = "Auto_ON_" + itemName + "_" + scene.getRuleId();
+            String ruleOffName = "Auto_OFF_" + itemName + "_" + scene.getRuleId();
+            restTemplate.exchange("http://localhost:8080/rest/rules/" + ruleOnName,
+                    HttpMethod.DELETE, requestEntity, String.class);
+            restTemplate.exchange("http://localhost:8080/rest/rules/" + ruleOffName,
+                    HttpMethod.DELETE, requestEntity, String.class);
+            rulesRepository.delete(scene);
+            return ok("Scene and associated OpenHAB rules deleted successfully");
+        } catch (RuntimeException e) {
+            return error(e.getMessage());
+        } catch (Exception e) {
+            return error("Something went wrong: " + e.getMessage());
         }
     }
 

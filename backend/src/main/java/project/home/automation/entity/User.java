@@ -25,7 +25,7 @@ public class User {
     private String email;
 
     @Column(nullable = false)
-    private String mobileNumber;
+    private String contactNumber;
 
     @JsonIgnore
     @Column(nullable = false)
@@ -36,11 +36,11 @@ public class User {
     private String role = "USER";
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    private List<Room> rooms;
+    private List<Rooms> rooms;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    private List<Device> devices;
+    private List<Things> things;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    private List<Scenes> scenes;
+    private List<Rules> rules;
 }

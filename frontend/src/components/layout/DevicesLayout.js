@@ -1,6 +1,5 @@
-import InsideSidePanel from "../InsideSidePanel";
 import { FiUser, FiSearch, FiLogOut } from 'react-icons/fi';
-import Layout from "./Layout";
+import InsideLayout from "./InsideLayout";
 
 export default function DevicesLayout({ activePage, InsideContent }) {
     const deviceMenu = [
@@ -12,17 +11,9 @@ export default function DevicesLayout({ activePage, InsideContent }) {
 
     return (
         <>
-            <Layout activePage={'Devices'} activeState={'sidepanel-active'}>
-                {/* Inside Left Panel */}
-                <div style={{ width: '240px' }}>
-                    <InsideSidePanel menu={deviceMenu} activePage={activePage} activeState={'inside-sidepanel-active'} />
-                </div>
-
-                {/* Inside Right Panel */}
-                <div style={{ width: 'calc(100% - 240px)', height: '100%', overflowY: 'hidden' }}>
-                    <InsideContent />
-                </div>
-            </Layout>
+            <InsideLayout menu={deviceMenu} activePage={'Devices'} insideActivePage={activePage}>
+                <InsideContent />
+            </InsideLayout >
         </>
     );
 };

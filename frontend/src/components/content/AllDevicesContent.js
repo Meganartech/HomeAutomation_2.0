@@ -1,24 +1,26 @@
-import axios from 'axios';
 import { useState, useEffect, useCallback } from 'react';
 import { FaTrash } from 'react-icons/fa';
 import { useNavigate, Link } from 'react-router-dom';
+import axios from 'axios';
+import ModalLayout from '../layout/ModalLayout';
 
 const customStyle1 = { fontWeight: '700', fontSize: '16px', lineHeight: '100%', letterSpacing: '-0.39px' };
 const customStyle2 = { fontWeight: '600', fontSize: '14px', lineHeight: '100%', letterSpacing: '-0.39px', height: '60px' };
 
 export default function AllDevicesContent() {
     const [devices, setDevices] = useState([]);
+    const [modal, setModal] = useState({ show: false, title: '', message: '', isError: false, onConfirm: null });
     const navigate = useNavigate();
 
     const token = localStorage.getItem('token');
 
-    const fetchDevices = useCallback(async () => {
+    const fetchDevice = useCallback(async () => {
         if (!token) {
             navigate('/');
             return;
         }
         try {
-            const { data, status } = await axios.get('http://localhost:8081/user/device',
+            const { data, status } = await axios.get(`${process.env.REACT_APP_API_URL}/user/thing`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             if (status === 200) {
@@ -26,7 +28,7 @@ export default function AllDevicesContent() {
                     const mainItem = thingsObj.items?.find(itemsObj =>
                         itemsObj.type === 'Switch' || itemsObj.type === 'Color' || itemsObj.name?.toLowerCase().includes('wiz_bulb_color')) || thingsObj.items?.[0];
                     return {
-                        deviceName: thingsObj.label,
+                        label: thingsObj.label,
                         itemName: mainItem?.name,
                         roomName: thingsObj.roomName,
                         status: mainItem?.state === 'ON' || mainItem?.state !== '0,0,0',
@@ -36,19 +38,19 @@ export default function AllDevicesContent() {
                 setDevices(filteredDevices);
             }
         } catch (err) {
-            const error = err.response?.data?.error || 'Error fetching devices';
-            console.error('Error fetching devices:', error);
             setDevices([]);
+            const errorMessage = err.response?.data?.error || 'Failed to fetch device';
+            console.error(errorMessage);
         }
     }, [token, navigate]);
 
     useEffect(() => {
-        fetchDevices();
+        fetchDevice();
         const intervalId = setInterval(() => {
-            fetchDevices();
+            fetchDevice();
         }, 3000);
         return () => clearInterval(intervalId);
-    }, [fetchDevices]);
+    }, [fetchDevice]);
 
     const handleToggle = async (itemName, newStatus) => {
         if (!token) {
@@ -56,16 +58,16 @@ export default function AllDevicesContent() {
             return;
         }
         try {
-            const { status } = await axios.post('http://localhost:8081/user/control',
+            const { status } = await axios.post(`${process.env.REACT_APP_API_URL}/user/control`,
                 { itemName, command: newStatus ? 'ON' : 'OFF' },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             if (status === 200) {
-                fetchDevices();
+                fetchDevice();
             }
         } catch (err) {
-            const error = err.response?.data?.error || 'Error sending command';
-            alert(error);
+            const errorMessage = err.response?.data?.error || 'Sending command failed';
+            console.error(errorMessage);
         }
     };
 
@@ -76,26 +78,41 @@ export default function AllDevicesContent() {
         }
         if (!window.confirm('Are you sure you want to delete this device?')) return;
         try {
-            const { data, status } = await axios.delete(`http://localhost:8081/user/device/${thingUID}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data, status } = await axios.delete(`${process.env.REACT_APP_API_URL}/user/delete/thing`,
+                { headers: { Authorization: `Bearer ${token}` }, params: { thingUID } }
+            );
             if (status === 200) {
-                alert(data.message);
-                fetchDevices();
+                setModal({
+                    show: true,
+                    title: 'Success',
+                    message: data.message,
+                    isError: false,
+                    onConfirm: () => { setModal({ ...modal, show: false }); }
+                });
+                fetchDevice();
             }
         } catch (err) {
-            const error = err.response?.data?.error || 'Error deleting device';
-            alert(error);
+            const errorMessage = err.response?.data?.error || 'Failed to delete device';
+            setModal({
+                show: true,
+                title: 'Failed',
+                message: <span className='text-danger'>{errorMessage}</span>,
+                isError: true,
+                onConfirm: () => setModal({ ...modal, show: false }),
+            });
         }
     };
 
     return (
         <>
             <div className='container px-5 py-4'>
+
                 <div className='d-flex justify-content-between align-items-center mb-3'>
                     <div style={{ fontSize: '24px', lineHeight: '100%', letterSpacing: '0' }}>All Devices</div>
                     <Link className='btn btn-dark' to={'/devices/search_bindings'} >Add Device</Link>
                 </div>
+
+                {/* Table */}
                 <div style={{ width: '100%', overflowX: 'hidden', height: '300px', overflowY: 'auto' }}>
                     {devices.length > 0 ? (
                         <div className='table-responsive'>
@@ -112,7 +129,7 @@ export default function AllDevicesContent() {
                                     {devices.map((devicesObj, index) => (
                                         <tr key={index} className={index % 2 === 0 ? 'table-EAEAEA' : ''}>
                                             <td className='p-3 border-0' style={{ ...customStyle2 }}>
-                                                {devicesObj.deviceName}
+                                                {devicesObj.label}
                                             </td>
                                             <td className='p-3 border-0' style={{ ...customStyle2 }}>
                                                 {devicesObj.roomName}
@@ -132,7 +149,6 @@ export default function AllDevicesContent() {
                                                 <FaTrash style={{ fontSize: '16px', cursor: 'pointer' }}
                                                     onClick={() => handleDelete(devicesObj.thingUID)}
                                                 />
-
                                             </td>
                                         </tr>
                                     ))}
@@ -143,7 +159,17 @@ export default function AllDevicesContent() {
                         <div className='alert d-flex justify-content-center align-items-center h-100'>No devices found</div>
                     )}
                 </div>
+
             </div>
+
+            {/* Alert Modal */}
+            {modal.show && (
+                <ModalLayout title={modal.title} msg={modal.message} modal={modal.onConfirm} hideClose={!modal.isError}>
+                    <button onClick={modal.onConfirm} className={`btn btn-dark px-3`}>
+                        {modal.isError ? 'Try Again' : 'OK'}
+                    </button>
+                </ModalLayout>
+            )}
         </>
     );
 };

@@ -6,7 +6,7 @@ input:-webkit-autofill {
 }
 
 
-.only-1440 {
+/* .only-1440 {
     display: none;
 }
 
@@ -14,7 +14,7 @@ input:-webkit-autofill {
     .only-1440 {
         display: block;
     }
-}
+} */
 
 .form-control,
 .form-select {
