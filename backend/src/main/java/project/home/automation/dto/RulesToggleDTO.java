@@ -10,13 +10,10 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class ChangePasswordDTO {
+public class RulesToggleDTO {
     @NotBlank(message = "This field is required")
-    private String userId;
+    private String ruleId;
 
     @NotBlank(message = "This field is required")
-    private String currentPassword;
-
-    @NotBlank(message = "This field is required")
-    private String newPassword;
+    private boolean enable;
 }

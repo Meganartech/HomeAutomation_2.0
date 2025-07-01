@@ -2,7 +2,6 @@ package project.home.automation.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -12,18 +11,17 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class UserDTO {
-    @NotBlank(message = "This field is required")
-    private String name;
-
+public class MailDTO {
     @NotBlank(message = "This field is required")
     @Email(message = "Email should be valid")
     private String email;
 
     @NotBlank(message = "This field is required")
-    @Pattern(regexp = "^[0-9]{10}$", message = "Contact number must be 10 digits")
-    private String contactNumber;
+    private String otp;
 
     @NotBlank(message = "This field is required")
     private String password;
+
+    @NotBlank(message = "This field is required")
+    private String newPassword;
 }

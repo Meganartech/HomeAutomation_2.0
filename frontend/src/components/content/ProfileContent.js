@@ -2,6 +2,8 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { FaEdit } from 'react-icons/fa';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import { useDispatch } from 'react-redux';
+import { setUserData } from '../../redux/slice';
 import axios from 'axios';
 import ModalLayout from '../layout/ModalLayout';
 
@@ -16,7 +18,7 @@ const Buttons = ({ onCancel }) => (
 );
 
 export default function ProfileContent() {
-    const [formData, setFormData] = useState({ name: '', email: '', mobileNumber: '' });
+    const [formData, setFormData] = useState({ name: '', email: '', contactNumber: '' });
     const [showPassword, setShowPassword] = useState(false);
     const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [showOtpVerifyModal, setShowOtpVerifyModal] = useState(false);
@@ -25,12 +27,15 @@ export default function ProfileContent() {
     const [otpField, setOtpField] = useState(['', '', '', '', '', '']);
     const [pendingField, setPendingField] = useState(null);
     const inputs = useRef([]);
+    const [modal, setModal] = useState({ show: false, title: '', message: '', isError: false, onConfirm: null });
     const navigate = useNavigate();
 
+    const dispatch = useDispatch();
+
     const formField = [
-        { name: 'name', id: 'name', type: 'text', label: 'Name' },
-        { name: 'mobileNumber', id: 'contact', type: 'tel', label: 'Mobile Number' },
-        { name: 'email', id: 'email', type: 'email', label: 'Email' }
+        { name: 'name', id: 'name', type: 'text', label: 'Name', autoComplete: 'name' },
+        { name: 'contactNumber', id: 'contact', type: 'tel', label: 'Contact Number', autoComplete: 'tel' },
+        { name: 'email', id: 'email', type: 'email', label: 'Email', autoComplete: 'email' }
     ];
 
     const token = localStorage.getItem('token');
@@ -42,15 +47,15 @@ export default function ProfileContent() {
                 return;
             }
             try {
-                const { data, status } = await axios.get('http://localhost:8081/user/profile',
+                const { data, status } = await axios.get(`${process.env.REACT_APP_API_URL}/user/profile`,
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
                 if (status === 200) {
-                    setFormData({ name: data.name || '', email: data.email || '', mobileNumber: data.mobileNumber || '' });
+                    setFormData({ name: data.name || '', email: data.email || '', contactNumber: data.contactNumber || '' });
                 }
             } catch (err) {
-                const error = err.response?.data?.error || 'Profile fetch failed';
-                console.error('Error:', error);
+                const errorMessage = err.response?.data?.error || 'Profile fetch failed';
+                console.error(errorMessage);
             }
         };
         fetchProfile();
@@ -69,22 +74,36 @@ export default function ProfileContent() {
             return;
         }
         try {
-            const { data, status } = await axios.patch('http://localhost:8081/user/profile/update', formData,
+            const { data, status } = await axios.patch(`${process.env.REACT_APP_API_URL}/user/profile/update`, formData,
                 { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` } }
             );
             if (status === 200) {
-                alert(data.message);
-                setEditField(null);
+                setModal({
+                    show: true,
+                    title: 'Success',
+                    message: data.message,
+                    isError: false,
+                    onConfirm: () => {
+                        setModal({ ...modal, show: false });
+                        setEditField(null);
+                    }
+                });
+                dispatch(setUserData({ fullName: formData.name }));
             }
         } catch (err) {
-            const error = err.response?.data?.error || 'Profile update failed';
-            alert(error);
-            console.error('Error:', error);
+            const errorMessage = err.response?.data?.error || 'Profile update failed. Please try again.';
+            setModal({
+                show: true,
+                title: 'Failed',
+                message: <span className='text-danger'>{errorMessage}</span>,
+                isError: true,
+                onConfirm: () => setModal({ ...modal, show: false }),
+            });
         }
     };
 
     const handleClick_Edit = (field) => {
-        if (field === 'email' || field === 'mobileNumber') {
+        if (field === 'email' || field === 'contactNumber') {
             setPendingField(field);
             setShowPasswordModal(true);
         } else {
@@ -103,18 +122,31 @@ export default function ProfileContent() {
                 { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` } }
             );
             if (status === 200) {
-                alert(data.message);
-                setPendingField(pendingField);
-                setPasswordField('');
-                setShowPasswordModal(false);
-                setShowOtpVerifyModal(true);
-                setEditField(null);
+                setModal({
+                    show: true,
+                    title: 'Success',
+                    message: data.message,
+                    isError: false,
+                    onConfirm: () => {
+                        setModal({ ...modal, show: false });
+                        setPendingField(pendingField);
+                        setPasswordField('');
+                        setShowPasswordModal(false);
+                        setShowOtpVerifyModal(true);
+                        setEditField(null);
+                    }
+                });
             }
         } catch (err) {
             setPasswordField('');
-            const error = err.response?.data?.error || 'Password verification failed';
-            alert(error);
-            console.error('Error:', error);
+            const errorMessage = err.response?.data?.error || 'Password verification failed. Please try again.';
+            setModal({
+                show: true,
+                title: 'Failed',
+                message: <span className='text-danger'>{errorMessage}</span>,
+                isError: true,
+                onConfirm: () => setModal({ ...modal, show: false }),
+            });
         }
     };
 
@@ -142,20 +174,33 @@ export default function ProfileContent() {
             return;
         }
         try {
-            const { data, status } = await axios.post('http://localhost:8081/user/otp/verify', { email: formData.email, otp },
+            const { data, status } = await axios.post(`${process.env.REACT_APP_API_URL}/user/otp/verify`, { email: formData.email, otp },
                 { headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` } }
             );
             if (status === 200) {
-                alert(data.message);
-                setEditField(pendingField);
-                setShowOtpVerifyModal(false);
-                setOtpField(['', '', '', '', '', '']);
-                setPendingField(null);
+                setModal({
+                    show: true,
+                    title: 'Success',
+                    message: data.message,
+                    isError: false,
+                    onConfirm: () => {
+                        setModal({ ...modal, show: false });
+                        setEditField(pendingField);
+                        setShowOtpVerifyModal(false);
+                        setOtpField(['', '', '', '', '', '']);
+                        setPendingField(null);
+                    }
+                });
             }
         } catch (err) {
-            const error = err.response?.data?.error || 'OTP verification failed';
-            alert(error);
-            console.error('Error:', error);
+            const errorMessage = err.response?.data?.error || 'OTP verification failed. Please try again.';
+            setModal({
+                show: true,
+                title: 'Failed',
+                message: <span className='text-danger'>{errorMessage}</span>,
+                isError: true,
+                onConfirm: () => setModal({ ...modal, show: false }),
+            });
         }
     };
 
@@ -165,13 +210,15 @@ export default function ProfileContent() {
 
                 <div style={{ fontSize: '24px', lineHeight: '100%', letterSpacing: '0' }} className='mb-3'>Profile</div>
 
+                {/* Form */}
                 <form onSubmit={handleSubmit_ProfileUpdate}>
-                    <div style={{ height: '300px', overflowY: 'auto' }}>
+
+                    <div style={{ width: '100%', overflowX: 'hidden', height: '300px', overflowY: 'auto' }}>
                         {formField.map((formFieldObj, index) => (
                             <React.Fragment key={index}>
                                 <div className='position-relative mb-3'>
                                     <label htmlFor={formFieldObj.id} className='form-label fw-bold'>{formFieldObj.label}</label>
-                                    <input type={formFieldObj.type} className='form-control' id={formFieldObj.id} name={formFieldObj.name} placeholder={formFieldObj.label} value={formData[formFieldObj.name]} onChange={handleChange_ProfileUpdate} required readOnly={editField !== formFieldObj.name} />
+                                    <input type={formFieldObj.type} className='form-control' id={formFieldObj.id} name={formFieldObj.name} placeholder={formFieldObj.label} value={formData[formFieldObj.name]} onChange={handleChange_ProfileUpdate} autoComplete={formFieldObj.autoComplete} required readOnly={editField !== formFieldObj.name} />
                                     <span style={{ position: 'absolute', right: '15px', top: '70%', transform: 'translateY(-50%)', cursor: 'pointer', color: editField === formFieldObj.name ? '#1f1f1f' : '#6c757d' }} onClick={() => handleClick_Edit(formFieldObj.name)}>
                                         <FaEdit />
                                     </span>
@@ -184,6 +231,7 @@ export default function ProfileContent() {
                             </Link>
                         </div>
                     </div>
+
                     <div className='text-end my-5'>
                         {editField && (
                             <>
@@ -192,17 +240,18 @@ export default function ProfileContent() {
                             </>
                         )}
                     </div>
+
                 </form>
 
             </div>
 
             {/* Password Modal */}
             {showPasswordModal && (
-                <ModalLayout title={'Verify Password'} modal={setShowPasswordModal}>
+                <ModalLayout title={'Verify Password'} modal={() => setShowPasswordModal(false)}>
                     <form onSubmit={handleSubmit_PasswordVerify}>
                         <div className='text-start mb-5'>
-                            <label className='form-label'>Password</label>
-                            <input type={showPassword ? 'text' : 'password'} className='form-control' value={passwordField} onChange={(e) => setPasswordField(e.target.value)} required autoFocus />
+                            <label className='form-label' htmlFor='password'>Password</label>
+                            <input type={showPassword ? 'text' : 'password'} id='password' className='form-control' value={passwordField} onChange={(e) => setPasswordField(e.target.value)} required autoFocus />
                             <span onClick={toggle} style={passwordIconStyle}>{showPassword ? <FaEyeSlash /> : <FaEye />}</span>
                         </div>
                         <Buttons onCancel={() => { setShowPasswordModal(false); setPasswordField(''); setPendingField(null); }} />
@@ -212,18 +261,27 @@ export default function ProfileContent() {
 
             {/* OTP Modal */}
             {showOtpVerifyModal && (
-                <ModalLayout title={'Verify OTP'} modal={setShowOtpVerifyModal}>
+                <ModalLayout title={'Verify OTP'} modal={() => setShowOtpVerifyModal(false)}>
                     <form onSubmit={handleSubmit_OTP}>
                         <div className='text-start mb-5'>
-                            <label className='form-label'>OTP</label>
+                            <label className='form-label' htmlFor='otp'>OTP</label>
                             <div className='d-flex justify-content-around mb-3'>
                                 {otpField.map((otpFieldObj, index) => (
-                                    <input key={index} ref={el => inputs.current[index] = el} type='text' maxLength='1' value={otpFieldObj} onChange={(e) => handleChange_OTP(index, e.target.value)} onKeyDown={(e) => handleKeyDown(index, e)} className='form-control rounded text-center mx-1' style={otpInputStyle} required />
+                                    <input key={index} ref={el => inputs.current[index] = el} type='text' id='otp' maxLength='1' value={otpFieldObj} onChange={(e) => handleChange_OTP(index, e.target.value)} onKeyDown={(e) => handleKeyDown(index, e)} className='form-control rounded text-center mx-1' style={otpInputStyle} required />
                                 ))}
                             </div>
                         </div>
                         <Buttons onCancel={() => { setShowOtpVerifyModal(false); setOtpField(''); setPendingField(null); }} />
                     </form>
+                </ModalLayout>
+            )}
+
+            {/* Alert Modal */}
+            {modal.show && (
+                <ModalLayout title={modal.title} msg={modal.message} modal={modal.onConfirm} hideClose={!modal.isError}>
+                    <button onClick={modal.onConfirm} className={`btn btn-dark px-3`}>
+                        {modal.isError ? 'Try Again' : 'OK'}
+                    </button>
                 </ModalLayout>
             )}
         </>

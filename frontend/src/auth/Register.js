@@ -1,21 +1,24 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
-import AuthBackground from '../components/layout/AuthLayout';
+import axios from 'axios';
+import ModalLayout from '../components/layout/ModalLayout';
+import AuthLayout from '../components/layout/AuthLayout';
 
-const INITIAL_STATE = { name: '', email: '', mobileNumber: '', password: '', confirmPassword: '' };
+const INITIAL_STATE = { name: '', email: '', contactNumber: '', password: '', confirmPassword: '' };
+const authBackgroundStyle = { maxWidth: '500px', width: '100%' };
+const passwordIconStyle = { position: 'absolute', right: '15px', top: '65%', transform: 'translateY(-50%)', cursor: 'pointer', color: '#6c757d' };
 
 export default function Register() {
-
     const [formData, setFormData] = useState(INITIAL_STATE);
     const [showPassword, setShowPassword] = useState({ password: false, confirmPassword: false });
+    const [modal, setModal] = useState({ show: false, title: '', message: '', isError: false, onConfirm: null });
     const navigate = useNavigate();
 
     const formField = [
         { name: 'name', type: 'text', label: 'Name', autoComplete: 'name' },
         { name: 'email', type: 'email', label: 'Email', autoComplete: 'email' },
-        { name: 'mobileNumber', type: 'tel', label: 'Contact No', autoComplete: 'tel' },
+        { name: 'contactNumber', type: 'tel', label: 'Contact No', autoComplete: 'tel' },
         { name: 'password', label: 'Password', autoComplete: 'new-password' },
         { name: 'confirmPassword', label: 'Confirm Password', autoComplete: 'new-password' },
     ];
@@ -33,32 +36,49 @@ export default function Register() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (formData.password !== formData.confirmPassword) {
-            alert('Passwords do not match!');
+            setModal({
+                show: true,
+                title: 'Error',
+                message: <span className='text-danger'>Passwords do not match</span>,
+                isError: true,
+                onConfirm: () => setModal({ ...modal, show: false }),
+            });
             return;
         }
         try {
-            const { data, status } = await axios.post('http://localhost:8081/user/register', formData);
+            const { data, status } = await axios.post(`${process.env.REACT_APP_API_URL}/user/register`, formData);
             if (status === 200) {
-                alert(data.message);
-                navigate('/');
+                setModal({
+                    show: true,
+                    title: 'Success',
+                    message: data.message,
+                    isError: false,
+                    onConfirm: () => {
+                        setModal({ ...modal, show: false });
+                        navigate('/');
+                    }
+                });
+                resetForm();
             }
         } catch (err) {
-            const error = err.data?.error || 'Register Failed';
-            console.error(error);
-        } finally {
-            resetForm();
+            const errorMessage = err.response.data?.error || 'Registration failed. Please try again.';
+            setModal({
+                show: true,
+                title: 'Failed',
+                message: <span className='text-danger'>{errorMessage}</span>,
+                isError: true,
+                onConfirm: () => setModal({ ...modal, show: false }),
+            });
         }
     };
 
-    const authBackgroundRegister = { maxWidth: '500px', width: '100%' };
-    const passwordIconStyle = { position: 'absolute', right: '15px', top: '65%', transform: 'translateY(-50%)', cursor: 'pointer', color: '#6c757d' };
-
     return (
         <>
-            <AuthBackground customStyle={authBackgroundRegister}>
+            <AuthLayout customStyle={authBackgroundStyle}>
 
                 <h3 className='mb-3'>Register</h3>
 
+                {/* Form */}
                 <form onSubmit={handleSubmit}>
                     {formField.map((formFieldObj, index) => (
                         <React.Fragment key={index}>
@@ -83,7 +103,16 @@ export default function Register() {
                     By registering you agree to <strong>Terms & Conditions</strong> and <strong>Privacy Policy</strong> of the Vermo
                 </p>
 
-            </AuthBackground>
+            </AuthLayout>
+
+            {/* Alert Modal */}
+            {modal.show && (
+                <ModalLayout title={modal.title} msg={modal.message} modal={modal.onConfirm} hideClose={!modal.isError}>
+                    <button onClick={modal.onConfirm} className={`btn btn-dark px-3`}>
+                        {modal.isError ? 'Try Again' : 'OK'}
+                    </button>
+                </ModalLayout>
+            )}
         </>
     );
 };

@@ -1,10 +1,14 @@
 import { useState, useRef } from 'react';
-import axios from 'axios';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import AuthBackground from '../components/layout/AuthLayout';
+import axios from 'axios';
+import ModalLayout from '../components/layout/ModalLayout';
+import AuthLayout from '../components/layout/AuthLayout';
+
+const authBackgroundStyle = { width: '100%', maxWidth: '450px', minHeight: '450px' };
 
 export default function OtpVerify() {
     const [otpData, setOtpData] = useState(['', '', '', '', '', '']);
+    const [modal, setModal] = useState({ show: false, title: '', message: '', isError: false, onConfirm: null });
     const navigate = useNavigate();
     const input = useRef([]);
     const location = useLocation();
@@ -32,29 +36,68 @@ export default function OtpVerify() {
         e.preventDefault();
         const otp = otpData.join('');
         try {
-            const { data, status } = await axios.post('http://localhost:8081/user/otp/verify', { email, otp });
+            const { data, status } = await axios.post(`${process.env.REACT_APP_API_URL}/user/otp/verify`, { email, otp });
             if (status === 200) {
-                alert(data.message);
-                navigate('/reset/password', { state: { email } });
+                setModal({
+                    show: true,
+                    title: 'Success',
+                    message: data.message,
+                    isError: false,
+                    onConfirm: () => {
+                        setModal({ ...modal, show: false });
+                        navigate('/reset/password', { state: { email } });
+                    }
+                });
+                resetForm();
             }
         } catch (err) {
-            const error = err.data?.error || 'OTP Verify Failed';
-            console.error(error);
-        } finally {
-            resetForm();
+            const errorMessage = err.response.data?.error || 'OTP-Verify failed.';
+            setModal({
+                show: true,
+                title: 'Failed',
+                message: <span className='text-danger'>{errorMessage}</span>,
+                isError: true,
+                onConfirm: () => setModal({ ...modal, show: false }),
+            });
         }
     };
 
-    const customStyle = { width: '100%', maxWidth: '450px', minHeight: '450px' };
+    const handleResendOtp = async (e) => {
+        e.preventDefault();
+        try {
+            const { data, status } = await axios.post(`${process.env.REACT_APP_API_URL}/user/resend/otp`, { email });
+            if (status === 200) {
+                setModal({
+                    show: true,
+                    title: 'Success',
+                    message: data.message,
+                    isError: false,
+                    onConfirm: () => {
+                        setModal({ ...modal, show: false });
+                    }
+                });
+            }
+        } catch (err) {
+            const errorMessage = err.response?.data?.error || 'Failed to resend OTP.';
+            setModal({
+                show: true,
+                title: 'Failed',
+                message: <span className='text-danger'>{errorMessage}</span>,
+                isError: true,
+                onConfirm: () => setModal({ ...modal, show: false }),
+            });
+        }
+    };
 
     return (
         <>
-            <AuthBackground customStyle={customStyle}>
+            <AuthLayout customStyle={authBackgroundStyle}>
 
                 <h3 className='mb-3'>Verify OTP</h3>
 
                 <p className='text-muted mb-3'>Enter 6 digit code sent to you at your email.</p>
 
+                {/* Form */}
                 <form onSubmit={handleSubmit}>
                     <div className='d-flex justify-content-around mb-3'>
                         {otpData.map((digit, i) => (
@@ -67,7 +110,7 @@ export default function OtpVerify() {
                                 onChange={(e) => handleChange(i, e.target.value)}
                                 onKeyDown={(e) => handleKeyDown(i, e)}
                                 className='form-control text-center'
-                                style={{ width: '50px', fontSize: '24px', borderBottom: '', borderRadius: '5px', background: 'transparent' }}
+                                style={{ width: '50px', fontSize: '24px', borderRadius: '5px', background: 'transparent' }}
                                 required
                             />
                         ))}
@@ -82,12 +125,22 @@ export default function OtpVerify() {
                     </p>
 
                     <div className='text-center mb-3'>
-                        <Link className='btn btn-link p-0 text-dark'>Resend Code</Link> |
-                        <Link className='btn btn-link p-0 text-dark ms-1' to={'/forgot/password'}>Change Email</Link>
+                        <Link className='btn-link p-0 text-dark mx-2' onClick={handleResendOtp}>Resend Code</Link>
+                        <span>|</span>
+                        <Link className='btn-link p-0 text-dark mx-2' to={'/forgot/password'}>Change Email</Link>
                     </div>
                 </form>
 
-            </AuthBackground>
+            </AuthLayout>
+
+            {/* Alert Modal */}
+            {modal.show && (
+                <ModalLayout title={modal.title} msg={modal.message} modal={modal.onConfirm} hideClose={!modal.isError}>
+                    <button onClick={modal.onConfirm} className={`btn btn-dark px-3`}>
+                        {modal.isError ? 'Try Again' : 'OK'}
+                    </button>
+                </ModalLayout>
+            )}
         </>
     );
 };

@@ -13,12 +13,12 @@ import java.util.List;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class Scenes {
+public class Rules {
     @Id
-    private String scenesId;
+    private String ruleId;
 
     @Column(nullable = false)
-    private String scenesName;
+    private String ruleName;
 
     @Column(nullable = false)
     private String fromTime;
@@ -33,13 +33,16 @@ public class Scenes {
     private String command;
 
     @Column(nullable = false)
-    private String deviceId;
+    private String thingId;
 
     @Column(nullable = false)
     private String roomId;
 
     @Column(nullable = false)
     private String roomName;
+
+    @Column(nullable = false)
+    private boolean enabled = true;
 
     @ManyToOne
     @JoinColumn(name = "user_id")

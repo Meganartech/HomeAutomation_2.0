@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route, useParams } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import './App.css';
+import Guard from './components/Guard';
 import Login from './auth/Login';
 import Register from './auth/Register';
 import ForgotPassword from './auth/ForgotPassword';
@@ -15,48 +17,48 @@ import HomeContent from './components/content/HomeContent';
 import SettingsLayout from './components/layout/SettingsLayout';
 import ProfileContent from './components/content/ProfileContent';
 import ChangePasswordContent from './components/content/ChangePasswordContent';
-import DeviceSettingsContent from './components/content/DeviceSettingsContent';
-import MessageCenterContent from './components/content/MessageCenterContent';
-import FAQFeedbackContent from './components/content/FAQFeedbackContent';
 import DevicesLayout from './components/layout/DevicesLayout';
 import AllDevicesContent from './components/content/AllDevicesContent';
 import SearchBindingsContent from './components/content/SearchBindingsContent';
+import UpdateSceneContent from './components/content/UpdateScenesContent';
 
 function App() {
   return (
     <div className='only-1440'>
       <BrowserRouter>
-        <Routes>
+        <Guard>
+          <Routes>
 
-          {/* Auth routes */}
-          <Route path='/' element={<Login />} />
-          <Route path='/register' element={<Register />} />
-          <Route path='/forgot/password' element={<ForgotPassword />} />
-          <Route path='/otp/verify' element={<OtpVerify />} />
-          <Route path='/reset/password' element={<ResetPassword />} />
+            {/* Auth routes */}
+            <Route path='/' element={<Login />} />
+            <Route path='/register' element={<Register />} />
+            <Route path='/forgot/password' element={<ForgotPassword />} />
+            <Route path='/otp/verify' element={<OtpVerify />} />
+            <Route path='/reset/password' element={<ResetPassword />} />
 
-          {/* Home */}
-          <Route path='/home' element={<HomeLayout InsideContent={<HomeContent />} />} />
+            {/* Home */}
+            <Route path='/home' element={<HomeLayout InsideContent={HomeContent} />} />
 
-          {/* Dynamic Room */}
-          <Route path='/room/:roomName' element={<DynamicRoom />} />
+            {/* Dynamic Room */}
+            <Route path='/room/:roomName' element={<DynamicRoom />} />
 
-          {/* Devices */}
-          <Route path='/devices/all_devices' element={<DevicesLayout activePage={'All Devices'} InsideContent={AllDevicesContent} />} />
-          <Route path='/devices/search_bindings' element={<DevicesLayout activePage={'Search Bindings'} InsideContent={SearchBindingsContent} />} />
+            {/* Devices */}
+            <Route path='/devices/all_devices' element={<DevicesLayout activePage={'All Devices'} InsideContent={AllDevicesContent} />} />
+            <Route path='/devices/search_bindings' element={<DevicesLayout activePage={'Search Bindings'} InsideContent={SearchBindingsContent} />} />
 
-          {/* Schedule */}
-          <Route path='/schedule/your_scenes' element={<ScheduleLayout activePage={'Your Scenes'} InsideContent={YourScenesContent} />} />
-          <Route path='/schedule/create_scenes' element={<ScheduleLayout activePage={'Create Scenes'} InsideContent={CreateScenesContent} />} />
+            {/* Schedule */}
+            <Route path='/schedule/your_schedule' element={<ScheduleLayout activePage={'Your Schedule'} InsideContent={YourScenesContent} />} />
+            <Route path='/schedule/create_schedule' element={<ScheduleLayout activePage={'Create Schedule'} InsideContent={CreateScenesContent} />} />
+            <Route path="/schedule/update_schedule/:id" element={<ScheduleLayout activePage={'Create Schedule'} InsideContent={UpdateSceneContent} />} />
 
-          {/* Settings */}
-          <Route path='/settings/profile' element={<SettingsLayout activePage={'Profile'} InsideContent={ProfileContent} />} />
-          <Route path='/settings/change_password' element={<SettingsLayout activePage={'Profile'} InsideContent={ChangePasswordContent} />} />
-          <Route path='/settings/device_settings' element={<SettingsLayout activePage={'Device Settings'} InsideContent={DeviceSettingsContent} />} />
-          <Route path='/settings/message_center' element={<SettingsLayout activePage={'Message Center'} InsideContent={MessageCenterContent} />} />
-          <Route path='/settings/faq_feedback' element={<SettingsLayout activePage={'FAQ Feedback'} InsideContent={FAQFeedbackContent} />} />
+            {/* Settings */}
+            <Route path='/settings/profile' element={<SettingsLayout activePage={'Profile'} InsideContent={ProfileContent} />} />
+            <Route path='/settings/change_password' element={<SettingsLayout activePage={'Profile'} InsideContent={ChangePasswordContent} />} />
 
-        </Routes>
+            <Route path="*" element={<Navigate to="/" replace />} />
+
+          </Routes>
+        </Guard>
       </BrowserRouter>
     </div>
   );

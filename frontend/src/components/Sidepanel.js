@@ -1,10 +1,10 @@
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { useEffect, useState } from 'react';
-import axios from 'axios';
 import { MdHome, MdDevices, MdSchedule } from 'react-icons/md';
 import { FaDoorOpen } from 'react-icons/fa';
 import { FiSettings } from 'react-icons/fi';
+import axios from 'axios';
 import Profile from '../assets/Profile.png';
 import "@fontsource/roboto/300.css";
 import '@fontsource/roboto/400.css';
@@ -12,10 +12,12 @@ import '@fontsource/roboto/400.css';
 const customStyle = { fontFamily: 'Roboto', fontWeight: 300, lineHeight: '100%', letterSpacing: '0%' };
 const linkStyle = { ...customStyle, fontSize: '16px' };
 
-export default function SidePanel({ activePage, activeState }) {
+export default function SidePanel({ activePage }) {
     const [firstRoomName, setFirstRoomName] = useState('');
     const navigate = useNavigate();
+
     const userData = useSelector((state) => state.user);
+
     const token = localStorage.getItem('token');
 
     useEffect(() => {
@@ -25,16 +27,17 @@ export default function SidePanel({ activePage, activeState }) {
                 return;
             }
             try {
-                const { data, status } = await axios.get('http://localhost:8081/user/room', {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                const { data, status } = await axios.get(`${process.env.REACT_APP_API_URL}/user/room`,
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
                 if (status === 200 && data.length > 0) {
                     setFirstRoomName(data[0].roomName);
                 } else {
                     setFirstRoomName('no_room');
                 }
             } catch (err) {
-                console.error('Error checking room:', err.response?.data?.error || err.message);
+                const errorMessage = err.response?.data?.error;
+                console.error(errorMessage);
             }
         };
         fetchRoom();
@@ -44,7 +47,7 @@ export default function SidePanel({ activePage, activeState }) {
         { to: '/home', icon: <MdHome className="me-2" />, label: 'Home', page: 'Home' },
         { to: `/room/${firstRoomName}`, icon: <FaDoorOpen className="me-2" />, label: 'Rooms', page: 'Rooms' },
         { to: '/devices/all_devices', icon: <MdDevices className="me-2" />, label: 'Devices', page: 'Devices' },
-        { to: '/schedule/your_scenes', icon: <MdSchedule className="me-2" />, label: 'Schedule', page: 'Schedule' },
+        { to: '/schedule/your_schedule', icon: <MdSchedule className="me-2" />, label: 'Schedule', page: 'Schedule' },
         { to: '/settings/profile', icon: <FiSettings className="me-2" />, label: 'Settings', page: 'Settings' }
     ];
 
@@ -61,7 +64,7 @@ export default function SidePanel({ activePage, activeState }) {
 
                 <div className="d-flex flex-column py-4">
                     {menuItems.map((menuItemsObj, index) => (
-                        <Link key={index} to={menuItemsObj.to} className={`text-decoration-none text-eaeaea d-flex align-items-center px-3 py-12px mb-3 sidepanel-hover ${activePage === menuItemsObj.page ? activeState : ''}`} style={linkStyle}>
+                        <Link key={index} to={menuItemsObj.to} className={`text-decoration-none text-eaeaea d-flex align-items-center px-3 py-12px mb-3 sidepanel-hover ${activePage === menuItemsObj.page ? 'sidepanel-active' : ''}`} style={linkStyle}>
                             {menuItemsObj.icon} {menuItemsObj.label}
                         </Link>
                     ))}

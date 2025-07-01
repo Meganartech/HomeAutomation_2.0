@@ -6,7 +6,9 @@ import ModalLayout from '../components/layout/ModalLayout'
 import "@fontsource/roboto/300.css";
 import '@fontsource/roboto/400.css';
 
-export default function InsideSidePanel({ menu, activePage, activeState }) {
+const customStyle = { fontFamily: 'Roboto', fontWeight: 300, lineHeight: '100%', letterSpacing: '0%' };
+
+export default function InsideSidePanel({ menu, activePage }) {
     const [showLogoutModal, setShowLogoutModal] = useState(false);
     const navigate = useNavigate();
     const dispatch = useDispatch();
@@ -21,40 +23,25 @@ export default function InsideSidePanel({ menu, activePage, activeState }) {
         setShowLogoutModal(false);
     };
 
-    const style = {
-        fontFamily: 'Roboto',
-        fontWeight: 300,
-        lineHeight: '100%',
-        letterSpacing: '0%'
-    };
-
     return (
         <>
             <div className="min-vh-100 px-3">
                 <div className="d-flex flex-column py-4">
-                    {menu.map((item, index) => {
-                        if (item.type === 'link') {
+                    {menu.map((menuObj, index) => {
+                        if (menuObj.type === 'link') {
                             return (
-                                <Link
-                                    key={index}
-                                    to={item.path}
-                                    className={`text-decoration-none text-1C1C1E d-flex align-items-center px-3 py-12px mb-2 sidepanel-hover ${activePage === item.label ? activeState : ''}`}
-                                    style={{ ...style, fontSize: '16px' }}
-                                >
-                                    <item.icon className='me-2' /> {item.label}
+                                <Link key={index} to={menuObj.path} style={{ ...customStyle, fontSize: '16px' }}
+                                    className={`text-decoration-none text-1C1C1E d-flex align-items-center px-3 py-12px mb-2 sidepanel-hover ${activePage === menuObj.label ? 'inside-sidepanel-active' : ''}`}>
+                                    <menuObj.icon className='me-2' /> {menuObj.label}
                                 </Link>
                             );
-                        } else if (item.type === 'divider') {
+                        } else if (menuObj.type === 'divider') {
                             return <div key={index} className='border-bottom mb-2'></div>;
-                        } else if (item.type === 'logout') {
+                        } else if (menuObj.type === 'logout') {
                             return (
-                                <div
-                                    key={index}
-                                    className="d-flex align-items-center px-3 py-12px mb-2 sidepanel-hover text-danger"
-                                    style={{ ...style, fontSize: '16px', cursor: 'pointer' }}
-                                    onClick={() => setShowLogoutModal(true)}
-                                >
-                                    <item.icon className='me-2' /> Logout
+                                <div key={index} className="d-flex align-items-center px-3 py-12px mb-2 sidepanel-hover text-danger"
+                                    style={{ ...customStyle, fontSize: '16px', cursor: 'pointer' }} onClick={() => setShowLogoutModal(true)}>
+                                    <menuObj.icon className='me-2' /> Logout
                                 </div>
                             );
                         }

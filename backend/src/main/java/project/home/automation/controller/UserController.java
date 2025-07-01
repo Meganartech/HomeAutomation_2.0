@@ -5,7 +5,6 @@ import org.springframework.web.bind.annotation.*;
 import project.home.automation.dto.*;
 import project.home.automation.service.UserService1;
 
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -20,32 +19,38 @@ public class UserController {
 
     // Post register
     @PostMapping("/register")
-    public ResponseEntity<?> postRegister(@RequestBody UserDTO registerRequest) {
-        return userService.postRegister(registerRequest);
+    public ResponseEntity<?> postRegister(@RequestBody UserDTO postRequest) {
+        return userService.postRegister(postRequest);
     }
 
     // Post login
     @PostMapping("/login")
-    public ResponseEntity<?> postLogin(@RequestBody UserDTO loginRequest) {
-        return userService.postLogin(loginRequest);
+    public ResponseEntity<?> postLogin(@RequestBody UserDTO postRequest) {
+        return userService.postLogin(postRequest);
     }
 
-    // Post email
+    // Post email and Get OTP
     @PostMapping("/forgot/password")
-    public ResponseEntity<?> postEmail(@RequestBody OtpDTO emailRequest) {
-        return userService.postEmail(emailRequest);
+    public ResponseEntity<?> postEmail_1(@RequestBody MailDTO postRequest) {
+        return userService.postEmail_1(postRequest);
+    }
+
+    // Post email and Get OTP (resend)
+    @PostMapping("/resend/otp")
+    public ResponseEntity<?> postEmail_2(@RequestBody MailDTO postRequest){
+        return userService.postEmail_2(postRequest);
     }
 
     // Post OTP
     @PostMapping("/otp/verify")
-    public ResponseEntity<?> postOtp(@RequestBody OtpDTO otpRequest) {
-        return userService.postOtp(otpRequest);
+    public ResponseEntity<?> postOtp(@RequestBody MailDTO postRequest) {
+        return userService.postOtp(postRequest);
     }
 
-    // Patch password update 1
+    // Patch password 1
     @PatchMapping("/reset/password")
-    public ResponseEntity<?> patchPassword_1Update(@RequestBody OtpDTO updateRequest) {
-        return userService.patchPassword_1Update(updateRequest);
+    public ResponseEntity<?> patchPassword_1(@RequestBody MailDTO patchRequest) {
+        return userService.patchPassword_1(patchRequest);
     }
 
     // Get profile
@@ -54,28 +59,28 @@ public class UserController {
         return userService.getProfile(token);
     }
 
-    // Patch profile update
-    @PatchMapping("/profile/update")
-    public ResponseEntity<?> patchProfileUpdate(@RequestHeader("Authorization") String token, @RequestBody UserDTO updateRequest) {
-        return userService.patchProfileUpdate(token, updateRequest);
-    }
-
-    // Patch password update 2
-    @PatchMapping("/change/password")
-    public ResponseEntity<?> patchPassword_2Update(@RequestHeader("Authorization") String token, @RequestBody ChangePasswordDTO updateRequest) {
-        return userService.patchPassword_2Update(token, updateRequest);
-    }
-
     // Post password
     @PostMapping("/password/verify")
-    public ResponseEntity<?> postPasswordAndGetOtp(@RequestHeader("Authorization") String token, @RequestBody OtpDTO otpRequest) {
-        return userService.postPasswordAndGetOtp(token, otpRequest);
+    public ResponseEntity<?> postPasswordAndGetOtp(@RequestHeader("Authorization") String token, @RequestBody MailDTO postRequest) {
+        return userService.postPasswordAndGetOtp(token, postRequest);
+    }
+
+    // Patch profile
+    @PatchMapping("/profile/update")
+    public ResponseEntity<?> patchProfile(@RequestHeader("Authorization") String token, @RequestBody UserDTO patchRequest) {
+        return userService.patchProfile(token, patchRequest);
+    }
+
+    // Patch password 2
+    @PatchMapping("/change/password")
+    public ResponseEntity<?> patchPassword_2(@RequestHeader("Authorization") String token, @RequestBody ChangePasswordDTO patchRequest) {
+        return userService.patchPassword_2(token, patchRequest);
     }
 
     // Post room
     @PostMapping("/room")
-    public ResponseEntity<?> postRoom(@RequestHeader("Authorization") String token, @RequestBody RoomDTO registerRequest) {
-        return userService.postRoom(token, registerRequest);
+    public ResponseEntity<?> postRoom(@RequestHeader("Authorization") String token, @RequestBody RoomsDTO postRequest) {
+        return userService.postRoom(token, postRequest);
     }
 
     // Get room
@@ -85,57 +90,69 @@ public class UserController {
     }
 
     // Delete room
-    @DeleteMapping("/room/{roomId}")
-    public ResponseEntity<?> deleteRoom(@RequestHeader("Authorization") String token, @PathVariable String roomId) {
+    @DeleteMapping("/delete/room")
+    public ResponseEntity<?> deleteRoom(@RequestHeader("Authorization") String token, @RequestParam String roomId) {
         return userService.deleteRoom(token, roomId);
     }
 
-    // Post scan and get inbox
+    // Post scan and Get inbox
     @PostMapping("/scan")
-    public ResponseEntity<?> postScan(@RequestHeader("Authorization") String token, @RequestParam String binding) {
+    public ResponseEntity<?> postScanAndGetInbox(@RequestHeader("Authorization") String token, @RequestParam String binding) {
         return userService.postScanAndGetInbox(token, binding);
     }
 
     // Post thing and link items
     @PostMapping("/thing")
-    public ResponseEntity<?> addThingAndLinkItems(@RequestHeader("Authorization") String token, @RequestBody ThingDTO postRequest) {
-        return userService.addThingAndLinkItems(token, postRequest);
+    public ResponseEntity<?> postThingAndLinkItems(@RequestHeader("Authorization") String token, @RequestBody ThingsDTO postRequest) {
+        return userService.postThingAndLinkItems(token, postRequest);
     }
 
     // Get thing and items
-    @GetMapping("/device")
-    public ResponseEntity<?> getThingsWithItems(@RequestHeader("Authorization") String token) {
-        return userService.getThingsWithItems(token);
+    @GetMapping("/thing")
+    public ResponseEntity<?> getThingWithItems(@RequestHeader("Authorization") String token) {
+        return userService.getThingWithItems(token);
     }
 
-    // Delete device
-    @DeleteMapping("/device/{thingUID}")
-    public ResponseEntity<?> deleteDevice(@RequestHeader("Authorization") String token, @PathVariable String thingUID) {
-        return userService.deleteDevice(token, thingUID);
+    // Delete thing
+    @DeleteMapping("/delete/thing")
+    public ResponseEntity<?> deleteThing(@RequestHeader("Authorization") String token, @RequestParam String thingUID) {
+        return userService.deleteThing(token, thingUID);
     }
 
     // Post control
     @PostMapping("/control")
-    public ResponseEntity<?> controlItem(@RequestHeader("Authorization") String token, @RequestBody Map<String, String> payload) {
+    public ResponseEntity<?> postControl(@RequestHeader("Authorization") String token, @RequestBody Map<String, String> payload) {
         return userService.postControl(token, payload);
     }
 
-    // Post scenes
-    @PostMapping("/scenes")
-    public ResponseEntity<?> postScenes(@RequestHeader("Authorization") String token, @RequestBody ScenesDTO postRequest) {
-        return userService.postScenes(token, postRequest);
+    // Post rule
+    @PostMapping("/rule")
+    public ResponseEntity<?> postRule(@RequestHeader("Authorization") String token, @RequestBody RulesDTO postRequest) {
+        return userService.postRule(token, postRequest);
     }
 
-    // Get scenes
-    @GetMapping("/scenes")
-    public ResponseEntity<?> getScenes(@RequestHeader("Authorization") String token) {
-        return userService.getScenes(token);
+    // Get rule
+    @GetMapping("/rule")
+    public ResponseEntity<?> getRule(@RequestHeader("Authorization") String token) {
+        return userService.getRule(token);
     }
 
-    // Patch scenes
-    @PatchMapping("/scenes/update")
-    public ResponseEntity<?> patchScenesAndRules(@RequestHeader("Authorization") String token, @RequestBody List<ScenesDTO> updatedScenesList) {
-        return userService.patchScenesAndRules(token, updatedScenesList);
+    // Patch rule
+    @PatchMapping("/rule/update")
+    public ResponseEntity<?> patchRule(@RequestHeader("Authorization") String token, @RequestBody RulesDTO patchRules) {
+        return userService.patchRule(token, patchRules);
+    }
+
+    // Enable or disable rule
+    @PatchMapping("/rule/toggle")
+    public ResponseEntity<?> toggleRule(@RequestHeader("Authorization") String token, @RequestBody RulesToggleDTO dto) {
+        return userService.toggleRule(token, dto);
+    }
+
+    // Delete rule
+    @DeleteMapping("/delete/rule")
+    public ResponseEntity<?> deleteRule(@RequestHeader("Authorization") String token, @RequestParam String ruleId) {
+        return userService.deleteRule(token, ruleId);
     }
 
 }

@@ -20,6 +20,7 @@ import project.home.automation.security.JwtAuthenticationFilter;
 @EnableWebSecurity
 @EnableMethodSecurity
 public class Security {
+
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     public Security(JwtAuthenticationFilter jwtAuthenticationFilter) {
@@ -32,7 +33,7 @@ public class Security {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(obj -> obj
-                        .requestMatchers("/user/register", "/user/login", "/user/forgot/password", "/user/otp/verify", "/user/reset/password").permitAll()
+                        .requestMatchers("/user/register", "/user/login", "/user/forgot/password", "/user/resend/otp", "/user/otp/verify", "/user/reset/password").permitAll()
                         .requestMatchers(
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",

@@ -2,16 +2,18 @@ import SidePanel from '../SidePanel';
 import Navbar from '../Navbar';
 import Indicator from '../Indicator';
 
-export default function Layout({ activePage, activeState, children }) {
+export default function Layout({ activePage, children }) {
     return (
         <>
             <div className="bg-eaeaea container-fluid position-fixed px-0" style={{ height: '100vh', width: '100vw' }}>
                 <div className="d-flex" style={{ height: '100%' }}>
-                    {/* Column-1 */}
+
+                    {/* Panel */}
                     <div style={{ width: '300px' }}>
-                        <SidePanel activePage={activePage} activeState={activeState} />
+                        <SidePanel activePage={activePage} />
                     </div>
-                    {/* Column-2 */}
+
+                    {/* Content */}
                     <div className='mx-3' style={{ width: 'calc(100% - 300px)', height: '100%', display: 'flex', flexDirection: 'column' }}>
                         <Navbar />
                         <Indicator />
@@ -21,6 +23,7 @@ export default function Layout({ activePage, activeState, children }) {
                             </div>
                         </div>
                     </div>
+
                 </div>
             </div>
         </>

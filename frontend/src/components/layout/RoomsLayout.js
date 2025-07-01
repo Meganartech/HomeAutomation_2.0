@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import InsideSidePanel from '../InsideSidePanel';
 import { MdWeekend, MdOutlineDinnerDining, MdOutlineKitchen, MdOutlineBedroomParent } from 'react-icons/md';
 import { FiLogOut } from 'react-icons/fi';
-import Layout from './Layout';
+import axios from 'axios';
+import InsideLayout from './InsideLayout';
 
 const iconMap = {
     'Living Room': MdWeekend,
@@ -20,7 +19,7 @@ export default function RoomsLayout({ roomName, InsideContent }) {
     const fetchRoom = async () => {
         const token = localStorage.getItem('token');
         try {
-            const { data, status } = await axios.get('http://localhost:8081/user/room',
+            const { data, status } = await axios.get(`${process.env.REACT_APP_API_URL}/user/room`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             if (status === 200) {
@@ -34,8 +33,8 @@ export default function RoomsLayout({ roomName, InsideContent }) {
             }
         } catch (err) {
             setRoomMenu([{ type: 'divider' }, { type: 'logout', icon: FiLogOut }]);
-            const error = err.response?.data?.error || 'Room fetch failed';
-            console.error('Error:', error);
+            const errorMessage = err.response?.data?.error || 'Room fetching failed';
+            console.error(errorMessage);
         }
     };
 
@@ -49,17 +48,9 @@ export default function RoomsLayout({ roomName, InsideContent }) {
 
     return (
         <>
-            <Layout activePage={'Rooms'} activeState={'sidepanel-active'}>
-                {/*  Inside Left Panel */}
-                <div style={{ width: '240px' }}>
-                    <InsideSidePanel menu={roomMenu} activePage={roomName} activeState={'inside-sidepanel-active'} />
-                </div >
-
-                {/* Inside Right Panel */}
-                < div style={{ width: 'calc(100% - 240px)', height: '100%', overflowY: 'hidden' }}>
-                    <InsideContent onRoomAdded={fetchRoom} />
-                </div >
-            </Layout>
+            <InsideLayout menu={roomMenu} activePage={'Rooms'} insideActivePage={roomName}>
+                <InsideContent onRoomAdded={fetchRoom} />
+            </InsideLayout>
         </>
     );
 };
